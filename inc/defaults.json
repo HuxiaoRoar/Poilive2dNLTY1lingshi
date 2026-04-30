@@ -187,5 +187,40 @@
   ],
   "mouse_hide_msgs": [
     "我们还能再见面的吧…？"
-  ]
+  ],
+ "songs": [
+  { "selector": "兔子先生", "text": "http://i.y.qq.com/rsc/fcgi-bin/fcg_pyq_play.fcg?songid=&songmid=003kEyJ20vINjT&songtype=1&fromtag=50&uin=1531918140&code=9D435" },
+  { "selector": "惜春去", "text": "http://i.y.qq.com/rsc/fcgi-bin/fcg_pyq_play.fcg?songid=&songmid=0015Is4c1G8MaC&songtype=1&fromtag=50&uin=1531918140&code=433F1" },
+  { "selector": "三月雨", "text": "http://i.y.qq.com/rsc/fcgi-bin/fcg_pyq_play.fcg?songid=&songmid=00272H2r2a11n2&songtype=1&fromtag=50&uin=1531918140&code=1A5E1" },
+  { "selector": "驭风少年", "text": "http://i.y.qq.com/rsc/fcgi-bin/fcg_pyq_play.fcg?songid=&songmid=002KeyKN1g5jEp&songtype=1&fromtag=50&uin=1531918140&code=4C739" },
+  { "selector": "Reeeee", "text": "http://c.y.qq.com/rsc/fcgi-bin/fcg_pyq_play.fcg?songmid=002ZiUy04C8Tlm&songtype=0&fromtag=7&code=c5006" },
+  { "selector": "海洋之心", "text": "http://c.y.qq.com/rsc/fcgi-bin/fcg_pyq_play.fcg?songmid=004YaDTS2AZxGu&songtype=0&fromtag=7&code=5ae29" },
+  { "selector": "你好，哈雷彗星", "text": "http://c.y.qq.com/rsc/fcgi-bin/fcg_pyq_play.fcg?songmid=003elDQh0zwuGV&songtype=0&fromtag=7&code=0337f" },
+  { "selector": "依存症", "text": "http://c.y.qq.com/rsc/fcgi-bin/fcg_pyq_play.fcg?songmid=002LxClo1AnjKN&songtype=0&fromtag=7&code=fa168" },
+  { "selector": "亲爱的", "text": "http://c.y.qq.com/rsc/fcgi-bin/fcg_pyq_play.fcg?songmid=002Jfiyn4QPyOT&songtype=0&fromtag=7&code=ee4f4" },
+  { "selector": "勾指起誓", "text": "http://c.y.qq.com/rsc/fcgi-bin/fcg_pyq_play.fcg?songmid=003DFkIK2D51yp&songtype=0&fromtag=7&code=0822d" },
+  { "selector": "大氿歌", "text": "http://c.y.qq.com/rsc/fcgi-bin/fcg_pyq_play.fcg?songmid=0041T9jw2BBslv&songtype=0&fromtag=7&code=ca676" },
+  { "selector": "消失在雨季", "text": "http://c.y.qq.com/rsc/fcgi-bin/fcg_pyq_play.fcg?songmid=003lj9fZ0bD2ft&songtype=0&fromtag=7&code=e8e27" },
+  { "selector": "我", "text": "http://c.y.qq.com/rsc/fcgi-bin/fcg_pyq_play.fcg?songmid=000ojHlm1DQORW&songtype=0&fromtag=7&code=b02e5" },
+  { "selector": "纪念", "text": "http://c.y.qq.com/rsc/fcgi-bin/fcg_pyq_play.fcg?songmid=002hxXc73No1bx&songtype=0&fromtag=7&code=25667" },
+  { "selector": "无敌", "text": "http://c.y.qq.com/rsc/fcgi-bin/fcg_pyq_play.fcg?songmid=002U7nN94Dr7KS&songtype=0&fromtag=7&code=0fb86" },
+  { "selector": "你看", "text": "http://c.y.qq.com/rsc/fcgi-bin/fcg_pyq_play.fcg?songmid=0024j9DG3bGC6z&songtype=0&fromtag=7&code=b030d" },
+  { "selector": "不停歇的旅途", "text": "http://c.y.qq.com/rsc/fcgi-bin/fcg_pyq_play.fcg?songmid=000MoDck35TqY4&songtype=0&fromtag=7&code=cdbfa" },
+  { "selector": "为了你唱下去", "text": "http://c.y.qq.com/rsc/fcgi-bin/fcg_pyq_play.fcg?songmid=002JvGsZ2Mn5D6&songtype=0&fromtag=7&code=7bd6e" },
+  { "selector": "夢想→World→歌唱", "text": "http://c.y.qq.com/rsc/fcgi-bin/fcg_pyq_play.fcg?songmid=003CuVfc0lH1Vi&songtype=0&fromtag=7&code=11a28" },
+  { "selector": "亚得里亚海的黎明", "text": "http://c.y.qq.com/rsc/fcgi-bin/fcg_pyq_play.fcg?songmid=003yyfig3gaNfJ&songtype=0&fromtag=7&code=34b90" },
+  { "selector": "Seattle物语Ⅱ", "text": "http://c.y.qq.com/rsc/fcgi-bin/fcg_pyq_play.fcg?songmid=00299hOu3zuvy5&songtype=0&fromtag=7&code=bea04" },
+  { "selector": "心跳同步的时光", "text": "http://c.y.qq.com/rsc/fcgi-bin/fcg_pyq_play.fcg?songmid=002u9Ghg1Tu1Yy&songtype=0&fromtag=7&code=5e3c5" },
+  { "selector": "世末歌者乐正绫", "text": "http://c.y.qq.com/rsc/fcgi-bin/fcg_pyq_play.fcg?songmid=001Cbsxe1KPijo&songtype=0&fromtag=7&code=cb354" },
+  { "selector": "hello&bye，days", "text": "http://c.y.qq.com/rsc/fcgi-bin/fcg_pyq_play.fcg?songmid=002BMPxC0ndqNv&songtype=0&fromtag=7&code=46e57" },
+  { "selector": "月白色倒影的少女", "text": "http://c.y.qq.com/rsc/fcgi-bin/fcg_pyq_play.fcg?songmid=0045JTBv2uhobs&songtype=0&fromtag=7&code=3304a" },
+  { "selector": "雨后的世界", "text": "http://c.y.qq.com/rsc/fcgi-bin/fcg_pyq_play.fcg?songmid=001ubG1u16S7xC&songtype=0&fromtag=7&code=e8647" },
+  { "selector": "纯蓝", "text": "http://c.y.qq.com/rsc/fcgi-bin/fcg_pyq_play.fcg?songmid=0032PlQp1fOG83&songtype=0&fromtag=7&code=90b2f" },
+  { "selector": "Step on your heart(Album ver)", "text": "http://c.y.qq.com/rsc/fcgi-bin/fcg_pyq_play.fcg?songmid=00273AT80FGHMV&songtype=0&fromtag=7&code=41056" },
+  { "selector": "万分之一的光（live）", "text": "http://c.y.qq.com/rsc/fcgi-bin/fcg_pyq_play.fcg?songmid=0003TOXq2OqnGE&songtype=0&fromtag=7&code=44f4a" },
+  { "selector": "カナタハルカ", "text": "http://c.y.qq.com/rsc/fcgi-bin/fcg_pyq_play.fcg?songmid=003ODX5I3SS2oJ&songtype=0&fromtag=7&code=43806" },
+  { "selector": "4:55&", "text": "http://c.y.qq.com/rsc/fcgi-bin/fcg_pyq_play.fcg?songmid=001ukyy43ymAgB&songtype=0&fromtag=7&code=59fd8" },
+  { "selector": "アドベンチャー", "text": "http://c.y.qq.com/rsc/fcgi-bin/fcg_pyq_play.fcg?songmid=001qEXoq1mDxgU&songtype=0&fromtag=7&code=1d0bd" }
+]
+
 }

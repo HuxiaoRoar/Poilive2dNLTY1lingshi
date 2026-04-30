@@ -21,6 +21,8 @@ class PoiLive2D_Settings {
         } else {
             $this->defaults = array();
         }
+
+        add_action('admin_head', array($this, 'inject_admin_styles')); // 注入自定义 CSS
     }
     public function page_init() {
 
@@ -100,7 +102,7 @@ class PoiLive2D_Settings {
         ]);
 
         add_settings_section('section_adv_welcome', '进站欢迎设置：', null, 'poilive2d-advanced');
-        // 替换为这全新的两行，直接调用我们之前写好的神器组件
+        
         $this->add_field('poilive2d-advanced', 'section_adv_welcome', 'welcome_hourly', '每小时提示', 'grouped_double_callback');
         $this->add_field('poilive2d-advanced', 'section_adv_welcome', 'welcome_search', '搜索引擎入站提示', 'grouped_double_callback');
         $this->add_field('poilive2d-advanced', 'section_adv_welcome', 'welcome_domain', '访问本站点的提示', 'grouped_double_callback');
@@ -111,6 +113,10 @@ class PoiLive2D_Settings {
         $this->add_field('poilive2d-advanced', 'section_adv_mouse', 'mouse_click_msgs', '自定义鼠标点击提示', 'grouped_textarea_callback');
         $this->add_field('poilive2d-advanced', 'section_adv_mouse', 'mouse_copy_msgs', '复制信息时的提示', 'repeater_single_callback');
         $this->add_field('poilive2d-advanced', 'section_adv_mouse', 'mouse_hide_msgs', '隐藏角色的提示', 'repeater_single_callback');
+        
+
+        add_settings_section('section_adv_audio', 'Sing设置：', null, 'poilive2d-advanced');
+        $this->add_field('poilive2d-advanced', 'section_adv_audio', 'songs', '播放列表', 'grouped_double_callback');
     }
 
     // 辅助函数：快速添加字段
@@ -232,35 +238,51 @@ public function number_callback($params) {
 
     // --- 模式一：分组行模式 (优化对齐与按钮) ---
     public function grouped_double_callback($params) {
-        $id = $params['id'];
-        $raw_items = $this->get_val($id, array());
-        $grouped = array();
-        if (is_array($raw_items)) {
-            foreach ($raw_items as $item) {
-                if (isset($item['selector'])) $grouped[$item['selector']][] = $item['text'];
-            }
+    $id = $params['id'];
+    $raw_items = $this->get_val($id, array());
+    $grouped = array();
+    if (is_array($raw_items)) {
+        foreach ($raw_items as $item) {
+            if (isset($item['selector'])) $grouped[$item['selector']][] = $item['text'];
         }
-        if (empty($grouped)) $grouped[''] = array('');
-
-        echo '<div class="grouped-rows-container" id="'.$id.'_container">';
-        foreach ($grouped as $selector => $texts) {
-            echo '<div class="selector-group-box" style="display: flex; margin-bottom: 10px; align-items: flex-start; gap: 10px;">';
-            echo '<input type="text" class="regular-text group-selector-input" style="width: 200px; font-weight: bold; margin: 0;" value="'.esc_attr($selector).'" placeholder="选择器">';
-            echo '<span style="font-weight: bold; margin-top: 5px;">:</span>';
-            echo '<div class="group-right-pool" style="flex: 1; display: flex; flex-direction: column; gap: 5px;">';
-            foreach ($texts as $t_index => $text) {
-                $is_last = ($t_index === count($texts) - 1);
-                echo '<div class="text-row" style="display: flex; gap: 5px; align-items: center;">';
-                echo '<input type="text" class="regular-text group-text-input" style="width: 600px; margin: 0;" value="'.esc_attr($text).'" placeholder="提示文本">';
-                echo '<button type="button" class="button remove-row-styled">-</button>'; // 使用统一样式类
-                if ($is_last) echo '<button type="button" class="button add-text-row-styled">+</button>';
-                echo '</div>';
-            }
-            echo '</div></div>';
-        }
-        echo '</div>';
-        echo '<p><button type="button" class="button button-primary add-new-group" data-target="'.$id.'_container">+ 增加新选择器组</button></p>';
     }
+    if (empty($grouped)) $grouped[''] = array('');
+
+    // --- 核心修改：根据 ID 动态分配占位符和文案 ---
+    $placeholder_left  = ($id === 'songs') ? '歌曲名称 (如: 乐鸣东方)' : '选择器 (如: #logo)';
+    $placeholder_right = ($id === 'songs') ? '音频链接 (如: https://.../song.mp3)' : '提示文本';
+    $btn_text          = ($id === 'songs') ? '+ 增加新歌曲' : '+ 增加新选择器组';
+    // ------------------------------------------------
+
+    echo '<div class="grouped-rows-container" id="'.$id.'_container">';
+    foreach ($grouped as $selector => $texts) {
+        echo '<div class="selector-group-box" style="display: flex; margin-bottom: 10px; align-items: flex-start; gap: 10px;">';
+        
+        // 应用左侧动态 placeholder
+        echo '<input type="text" class="regular-text group-selector-input" style="width: 200px; font-weight: bold; margin: 0;" value="'.esc_attr($selector).'" placeholder="'.esc_attr($placeholder_left).'">';
+        
+        echo '<span style="font-weight: bold; margin-top: 5px;">:</span>';
+        echo '<div class="group-right-pool" style="flex: 1; display: flex; flex-direction: column; gap: 5px;">';
+        
+        foreach ($texts as $t_index => $text) {
+            $is_last = ($t_index === count($texts) - 1);
+            echo '<div class="text-row" style="display: flex; gap: 5px; align-items: center;">';
+            
+            // 应用右侧动态 placeholder
+            echo '<input type="text" class="regular-text group-text-input" style="width: 600px; margin: 0;" value="'.esc_attr($text).'" placeholder="'.esc_attr($placeholder_right).'">';
+            
+            echo '<button type="button" class="button remove-row-styled">-</button>'; 
+            if ($is_last) echo '<button type="button" class="button add-text-row-styled">+</button>';
+            echo '</div>';
+        }
+        echo '</div></div>';
+    }
+    echo '</div>';
+    
+    // 应用底部按钮动态文案
+    echo '<p><button type="button" class="button button-primary add-new-group" data-target="'.$id.'_container">'.esc_html($btn_text).'</button></p>';
+}
+    
 
     // --- 模式二：多行文本框模式 (解决高度对齐) ---
     public function grouped_textarea_callback($params) {
