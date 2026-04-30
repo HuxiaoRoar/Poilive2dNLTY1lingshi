@@ -1,7 +1,11 @@
 function InitPoi(){
-    loadlive2d('live2d', `${live2d_Path}model.json.php`,showConsoleTips("加载"));
+    // 这里的 model 可以先固定为 天依（中文完全没问题了）
+    var currentModel = "天依"; 
+    // 使用 encodeURIComponent 编码中文，防止 URL 报错
+    var apiUrl = poilive2d_api_url + "?model=" + encodeURIComponent(currentModel);
+    
+    loadlive2d('live2d', apiUrl, showConsoleTips("加载"));
 }
-
 
 function showConsoleTips(content){
     var style_green = "font-family:'微软雅黑';font-size:1em;background-color:#34a853;color:#fff;padding:4px;";

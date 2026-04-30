@@ -28,6 +28,7 @@ function live2d_head()
         echo 'var live2d_Path = "' . LIVE2D_URL . '/live2d/model/天依/";';
         echo 'var message_Path = "' . LIVE2D_URL . '/live2d/";';
         echo 'var home_Path = "' . home_url() . '/";';
+        echo 'var poilive2d_api_url = "' . LIVE2D_URL . '/live2d/model/model-api.php";';// live2d
         echo 'var poilive2d_config = ' . wp_json_encode($settings) . ';';
         echo '</script>';
 
@@ -120,4 +121,3 @@ function live2d_footer()
         <?php
     }
 }
-// 旧代码中的 hex2rgb 函数已被彻底废除，代码变得更加干净轻量！

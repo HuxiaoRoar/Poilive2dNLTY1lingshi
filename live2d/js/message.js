@@ -268,14 +268,23 @@ function initLive2d (){
             $('#landlord').css('display', 'none');
             $('.show-button').fadeIn(300);
         });
+        // 切换模型（变身）
         $('#change-button').on('click', () => {
             modelIdx = (modelIdx + 1) % theModel.length;
-            loadlive2d('live2d',message_Path+'model/'+theModel[modelIdx]+'/model.json.php');
-            showMessage("已切换成"+theModel[modelIdx],5000);
+            var currentModel = theModel[modelIdx];
+            
+            var apiUrl = poilive2d_api_url + "?model=" + encodeURIComponent(currentModel);
+            loadlive2d('live2d', apiUrl);
+            showMessage("已切换成 " + currentModel, 5000);
         });
+
+        // 切换材质（变装）
         $('#switch-button').on('click', () => {
-            $("#live2d").animate({opacity:'0'},100);
-            loadlive2d('live2d', message_Path+'model/'+theModel[modelIdx]+'/model.json.php',showConsoleTips("更换"));
+            $("#live2d").animate({opacity:'0'}, 100);
+            var currentModel = theModel[modelIdx];
+            
+            var apiUrl = poilive2d_api_url + "?model=" + encodeURIComponent(currentModel);
+            loadlive2d('live2d', apiUrl, showConsoleTips("更换"));
         });
         
         $('#catalog-button').on('click', () => {
@@ -359,23 +368,30 @@ function initLive2d (){
 }
 initLive2d ();
 
-var num=2;
-function getsong(){
-    if(num%2==0){
-        $.getJSON(`${live2d_Path}songs.json`,function(songs_json){
-            var rnum = parseInt(Math.random()*songs_json.length);
-            var songs_url = songs_json[rnum]["url"];
-            var songs_name = songs_json[rnum]["name"];
-            showMessage("正在播放 [ " + songs_name + " ]", 5000);
-            document.getElementById("sing").innerHTML='<audio src='+songs_url+' id="myaudio" controls="controls" loop="false" hidden="true">';
-            document.getElementById("sing-button").innerHTML="Pause";
-            var myAuto = document.getElementById('myaudio');
-            myAuto.play();
-            num=num+1;
-        });
+var num = 2;
+function getsong() {
+    if (num % 2 == 0) {
+        // 直接从后台配置中读取歌曲列表
+        var songs_json = poilive2d_config.songs || [];
+        
+        if (songs_json.length === 0) {
+            showMessage("站长还没有添加歌曲哦！", 5000);
+            return;
+        }
+
+        var rnum = parseInt(Math.random() * songs_json.length);
+        var songs_url = songs_json[rnum]["text"];     // 注意：我们后台存的 URL 键名是 text
+        var songs_name = songs_json[rnum]["selector"];// 后台存的 歌名 键名是 selector
+
+        showMessage("正在播放 [ " + songs_name + " ]", 5000);
+        document.getElementById("sing").innerHTML = '<audio src="' + songs_url + '" id="myaudio" controls="controls" loop="false" hidden="true">';
+        document.getElementById("sing-button").innerHTML = "Pause";
+        var myAuto = document.getElementById('myaudio');
+        myAuto.play();
+        num = num + 1;
     } else {
-        document.getElementById("sing-button").innerHTML="Sing";
-        document.getElementById("sing").innerHTML='<audio src="" id="myaudio" controls="controls" loop="false" hidden="true">';
-        num=num+1;
+        document.getElementById("sing-button").innerHTML = "Sing";
+        document.getElementById("sing").innerHTML = '<audio src="" id="myaudio" controls="controls" loop="false" hidden="true">';
+        num = num + 1;
     }
 }
