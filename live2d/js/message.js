@@ -1,3 +1,60 @@
+// ==========================================
+// 1. 动态获取模型列表和衣服数量（全自动，不写死）
+// ==========================================
+var theModel = Object.keys(poilive2d_models_info); // 自动获取: ["Poi", "天依"]
+var modelTexturesMax = poilive2d_models_info;      // 自动获取: {"Poi": 37, "天依": 3}
+
+// 防错处理：如果没扫到模型，给个默认值
+if (theModel.length === 0) {
+    theModel = ["天依"];
+    modelTexturesMax = {"天依": 3};
+}
+
+// 全局当前状态
+var currentModelIdx = 0;
+var currentModel = theModel[0];
+var currentTexId = 1;
+
+// ==========================================
+// 2. 初始加载状态解析（终极严谨版）
+// ==========================================
+function resolveInitialState() {
+    // --- A. 模型解析 (改为记录名字，防止顺序打乱) ---
+    var savedRoleName = localStorage.getItem('live2d_role_name');
+    var foundIdx = theModel.indexOf(savedRoleName); // 看看记忆里的名字还在不在文件夹里
+
+    if (poilive2d_config.role_record === '1' && savedRoleName !== null && foundIdx !== -1) {
+        currentModelIdx = foundIdx;
+    } else {
+        // 如果没记忆，或者记忆的名字被删了，就随机抽一个
+        currentModelIdx = Math.floor(Math.random() * theModel.length);
+        
+        // 【核心修复】：如果你开启了记忆，那么初次进网页抽到的这个盲盒结果，也要立刻存起来！
+        if (poilive2d_config.role_record === '1') {
+            localStorage.setItem('live2d_role_name', theModel[currentModelIdx]);
+        }
+    }
+    currentModel = theModel[currentModelIdx];
+
+    // --- B. 材质解析 ---
+    var texKey = 'live2d_tex_' + currentModel;
+    var savedTexId = localStorage.getItem(texKey);
+    var maxTex = modelTexturesMax[currentModel];
+    
+    // 注意这里加了 parseInt，防止字符串和数字比较出 Bug
+    if (poilive2d_config.texture_record === '1' && savedTexId !== null && parseInt(savedTexId) <= maxTex) {
+        currentTexId = parseInt(savedTexId);
+    } else {
+        currentTexId = Math.floor(Math.random() * maxTex) + 1;
+        // 【核心修复】：初次给当前角色抽到的衣服，也要立刻存起来
+        if (poilive2d_config.texture_record === '1') {
+            localStorage.setItem(texKey, currentTexId);
+        }
+    }
+}
+// 网页刚加载，立刻解析状态
+resolveInitialState();
+
 function renderTip(template, context) {
     var tokenReg = /(\\)?\{([^\{\}\\]+)(\\)?\}/g;
     return template.replace(tokenReg, function (word, slash1, token, slash2) {
@@ -268,24 +325,88 @@ function initLive2d (){
             $('#landlord').css('display', 'none');
             $('.show-button').fadeIn(300);
         });
-        // 切换模型（变身）
-        $('#change-button').on('click', () => {
-            modelIdx = (modelIdx + 1) % theModel.length;
-            var currentModel = theModel[modelIdx];
-            
-            var apiUrl = poilive2d_api_url + "?model=" + encodeURIComponent(currentModel);
+        
+        // ==========================================
+        // 3. 按钮点击切换逻辑（强制同步防穿透版）
+        // ==========================================
+
+        // --- 变身按钮（切换模型） ---
+        $('#change-button').off('click').on('click', () => {
+            // 【终极装甲】：抛弃一切可能被污染的变量，强制从当前真正显示的名称反查真实的数学序号！
+            var realIdx = theModel.indexOf(currentModel);
+            if (realIdx === -1) realIdx = 0; // 防错兜底
+
+            // 1. 计算下一位
+            if (poilive2d_config.switch_model === 'random') {
+                var nextIdx;
+                do {
+                    nextIdx = Math.floor(Math.random() * theModel.length);
+                } while (nextIdx === realIdx && theModel.length > 1);
+                currentModelIdx = nextIdx;
+            } else {
+                // 这里全都是纯正的 Number 运算，绝对不会再发生 "1"+1="11" 的惨剧了！
+                currentModelIdx = (realIdx + 1) % theModel.length;
+            }
+            currentModel = theModel[currentModelIdx];
+
+            // 2. 存入记忆（存入模型真正的名字）
+            if (poilive2d_config.role_record === '1') {
+                localStorage.setItem('live2d_role_name', currentModel);
+            }
+
+            // 3. 决定新模型的衣服 (检查新模型的衣服记忆)
+            var texKey = 'live2d_tex_' + currentModel;
+            var savedTexId = localStorage.getItem(texKey);
+            var maxTex = modelTexturesMax[currentModel];
+
+            if (poilive2d_config.texture_record === '1' && savedTexId !== null && parseInt(savedTexId) <= maxTex) {
+                currentTexId = parseInt(savedTexId);
+            } else {
+                currentTexId = Math.floor(Math.random() * maxTex) + 1;
+                // 如果开启了衣服记忆，新抽的衣服也要顺手存下来
+                if (poilive2d_config.texture_record === '1') {
+                    localStorage.setItem(texKey, currentTexId);
+                }
+            }
+
+            // 4. 发起加载
+            var apiUrl = poilive2d_api_url + "?model=" + encodeURIComponent(currentModel) + "&tex=" + currentTexId;
             loadlive2d('live2d', apiUrl);
             showMessage("已切换成 " + currentModel, 5000);
         });
 
-        // 切换材质（变装）
-        $('#switch-button').on('click', () => {
-            $("#live2d").animate({opacity:'0'}, 100);
-            var currentModel = theModel[modelIdx];
-            
-            var apiUrl = poilive2d_api_url + "?model=" + encodeURIComponent(currentModel);
+
+        // --- 变装按钮（切换材质） ---
+        $('#switch-button').off('click').on('click', () => {
+            $("#live2d").animate({ opacity: '0' }, 100);
+            var maxTex = modelTexturesMax[currentModel];
+
+            // 【终极装甲】：强制保证衣服 ID 是纯数字
+            currentTexId = parseInt(currentTexId);
+
+            // 1. 怎么切下一件？（看设置是顺序还是随机）
+            if (poilive2d_config.switch_texture === 'random') {
+                var nextTex;
+                do {
+                    nextTex = Math.floor(Math.random() * maxTex) + 1;
+                } while (nextTex === currentTexId && maxTex > 1);
+                currentTexId = nextTex;
+            } else {
+                currentTexId = (currentTexId % maxTex) + 1; // 顺序循环: 1,2,3...1
+            }
+
+            // 2. 存入记忆
+            if (poilive2d_config.texture_record === '1') {
+                localStorage.setItem('live2d_tex_' + currentModel, currentTexId);
+            }
+
+            // 3. 发起加载
+            var apiUrl = poilive2d_api_url + "?model=" + encodeURIComponent(currentModel) + "&tex=" + currentTexId;
             loadlive2d('live2d', apiUrl, showConsoleTips("更换"));
         });
+
+
+
         
         $('#catalog-button').on('click', () => {
             var tits = 0;

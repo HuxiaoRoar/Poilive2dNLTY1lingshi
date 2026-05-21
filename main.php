@@ -8,7 +8,10 @@ function live2d_scripts()
         wp_enqueue_style('live2d-base', LIVE2D_URL . '/live2d/css/live2d.css', array(), LIVE2D_VERSION, 'all');
         wp_enqueue_script('live2d-jquery', LIVE2D_URL . '/live2d/js/jquery.min.js', array('jquery'), LIVE2D_VERSION, true);
         wp_enqueue_script('live2d-base', LIVE2D_URL . '/live2d/js/live2d.js', array('live2d-jquery'), LIVE2D_VERSION, true);
-        wp_enqueue_script('live2d-message', LIVE2D_URL . '/live2d/js/message.js', array('live2d-jquery'), LIVE2D_VERSION, true);
+        //wp_enqueue_script('live2d-message', LIVE2D_URL . '/live2d/js/message.js', array('live2d-jquery'), LIVE2D_VERSION, true);
+        wp_enqueue_script('live2d-message', LIVE2D_URL . '/live2d/js/live2d-message.js', array('live2d-jquery'), LIVE2D_VERSION, true);
+         wp_enqueue_script('live2d-ctrl', LIVE2D_URL . '/live2d/js/live2d-ctrl.js', array('live2d-jquery', 'live2d-message'), LIVE2D_VERSION, true);
+        
         wp_enqueue_script('live2d-run', LIVE2D_URL . '/live2d/js/run_local.js', array('live2d-jquery'), LIVE2D_VERSION, true);
     }
 }
@@ -25,11 +28,33 @@ function live2d_head()
 
         // 2. 注入全局 JS 变量 (第一页、第三页功能的核心)
         echo '<script type="text/javascript">';
-        echo 'var live2d_Path = "' . LIVE2D_URL . '/live2d/model/天依/";';
+        //echo 'var live2d_Path = "' . LIVE2D_URL . '/live2d/model/天依/";';
         echo 'var message_Path = "' . LIVE2D_URL . '/live2d/";';
         echo 'var home_Path = "' . home_url() . '/";';
         echo 'var poilive2d_api_url = "' . LIVE2D_URL . '/live2d/model/model-api.php";';// live2d
         echo 'var poilive2d_config = ' . wp_json_encode($settings) . ';';
+
+
+        $live2d_model_dir = LIVE2D_PATH . '/live2d/model/';
+        $models_info = array();
+        $model_dirs = glob($live2d_model_dir . '*', GLOB_ONLYDIR);
+        foreach ($model_dirs as $dir) {
+            $m_name = basename($dir);
+            // 只扫描数字命名的 png 作为衣服
+            $textures = glob($dir . '/textures/*.png');
+            $valid_tex_count = 0;
+            foreach ($textures as $tex) {
+                if (is_numeric(basename($tex, '.png'))) {
+                    $valid_tex_count++;
+                }
+            }
+            if ($valid_tex_count > 0) {
+                $models_info[$m_name] = $valid_tex_count;
+            }
+        }
+
+        echo 'var poilive2d_models_info = ' . wp_json_encode($models_info) . ';';
+        
         echo '</script>';
 
         // 3. 动态 CSS 生成：接管第二页的所有外观设置
@@ -76,7 +101,7 @@ function live2d_head()
             color: {$b_color} !important; 
         }";
         // 控制气泡中加粗或带链接文字的高亮颜色
-        $css .= ".message a, .message span { color: {$b_hl} !important; }";
+        $css .= ".message a, .message span { color: {$b_hl} }";
 
         // --- 按钮样式设定 ---
         $btn_size = isset($settings['btn_size']) ? intval($settings['btn_size']) : 60;

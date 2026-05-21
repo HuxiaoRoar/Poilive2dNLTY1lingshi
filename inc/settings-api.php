@@ -33,6 +33,20 @@ class PoiLive2D_Settings {
             array($this, 'sanitize') 
         );
 
+        // 在 page_init 内部计算初始状态
+        $opt = get_option('poilive2d_options');
+        $current_api = isset($opt['hitokoto_api']) ? $opt['hitokoto_api'] : 'local';
+        $current_origin = isset($opt['hitokoto_origin']) ? $opt['hitokoto_origin'] : '2';
+        
+
+
+        // 计算类名（如果逻辑不符，则加上 hidden-settings-row）
+        $local_msgs_class = ($current_api === 'local') ? '' : 'hidden-settings-row';
+        $msgs_class = ($current_origin === '1') ? '' : 'hidden-settings-row';
+        $suffixes_class = ($current_origin === '0') ? '' : 'hidden-settings-row';
+        $jinrishici_sdk_class = ($current_api === 'jinrishici') ? '' : 'hidden-settings-row';
+        
+
         /* ==========================================================================
          * TAB 1: 基础设置 (poilive2d-basic)
          * ========================================================================== */
@@ -87,41 +101,99 @@ class PoiLive2D_Settings {
 
 
         /* ==========================================================================
-         * TAB 3: 高级设置 (poilive2d-advanced)
+         * TAB 3: 一言设置 (poilive2d-hitokoto)
          * ========================================================================== */
-        add_settings_section('section_adv_hitokoto', '一言设置：', null, 'poilive2d-advanced');
-        $this->add_field('poilive2d-advanced', 'section_adv_hitokoto', 'hitokoto_delay', '启用一言', 'number_callback', '一言延迟时间(秒)。如果设置为0，则禁用一言。');
-        $this->add_field('poilive2d-advanced', 'section_adv_hitokoto', 'hitokoto_api', '一言 API', 'select_callback', [
-            'jinrishici' => 'jinrishici.com', 'hitokoto' => 'v1.hitokoto.cn', 'fghrsh' => 'fghrsh.net', 'local' => '本地一言'
-        ]);
-        $this->add_field('poilive2d-advanced', 'section_adv_hitokoto', 'hitokoto_msgs', '一言API的消息', 'fixed_tips_callback', [
-            'lwl12.com' => '这句一言来自 <span style={highlight}>『{source}』</span>|，是 <span style={highlight}>{creator}</span> 投稿的。',
-            'fghrsh.net' => '来看看站长写的小作文 《{text}》 吧！',
-            'jinrishici.com' => '希望你能找到心仪的东西！'
 
+        add_settings_section('section_hitokoto_main', '一言设置：', null, 'poilive2d-hitokoto');
+        $this->add_field('poilive2d-hitokoto', 'section_hitokoto_main', 'hitokoto_delay', '启用一言', 'number_callback', '一言延迟时间(秒)。如果设置为0，则禁用一言。');
+        // 1. API 选择 
+        $this->add_field('poilive2d-hitokoto', 'section_hitokoto_main', 'hitokoto_api', '一言 API', 'select_callback', [
+            'yiblue'      => '依言(luotianyi.blue)', 
+            'jinrishici'  => '今日诗词(jinrishici.com)', 
+            'hitokoto'    => '官方一言(v1.hitokoto.cn)', 
+            'fghrsh'      => 'fghrsh一言(fghrsh.net)', 
+            'local'       => '本地一言'
         ]);
+        $this->add_field('poilive2d-hitokoto', 'section_hitokoto_main', 'hitokoto_jinrishici_sdk', '今日诗词推荐模式', 'radio_callback', [
+            '0' => '关闭个性化推荐（使用老 API，更随机）', 
+            '1' => '开启个性化推荐（使用SDK，根据地域天气推荐）'
+        ], $jinrishici_sdk_class);        
+
+        $this->add_field('poilive2d-hitokoto', 'section_hitokoto_main', 'hitokoto_local_msgs', '本地一言列表', 'textarea_array_callback', null, $local_msgs_class);
+
+        $this->add_field('poilive2d-hitokoto', 'section_hitokoto_main', 'hitokoto_origin', '一言与来源排列方式', 'radio_callback', [
+            '0' => '合为一句。例：长风破浪会有时，直挂云帆济沧海 ——（唐）李白',
+            '1' => '分为两句。例：第一句：长风破浪会有时，直挂云帆济沧海。第二句：这句诗词出自《行路难》，是 唐代诗人 李白 创作的！',
+            '2' => '不要介绍。例：长风破浪会有时，直挂云帆济沧海']);
+         
+        // 2. 来源介绍格式 
+        $this->add_field('poilive2d-hitokoto', 'section_hitokoto_main', 'hitokoto_msgs', '来源介绍格式', 'fixed_tips_callback', [
+            'dependency' => 1,
+            'config' => [
+                'yiblue'     => ['label' => '依言', 'default' => '这句一言出自 {source}，是 {creator} 在依言投稿的！'],
+                'jinrishici' => ['label' => '今日诗词', 'default' => '这句诗词出自 《{title}》，是 {dynasty}诗人 {author} 创作的！'],
+                'hitokoto'   => ['label' => '官方一言', 'default' => '这句一言出自 『{source}』{author}，是 {creator} 投稿的。'],
+                'fghrsh'     => ['label' => 'FGHRSH', 'default' => '来看看站长写的小作文 《{text}》 吧！'],
+                'local'      => ['label' => '本地一言', 'default' => '这句一言来自 『{source}』，是 {creator} 投稿的。']
+            ]
+        ], $msgs_class);
+
+        // 3. 后缀编辑格式 (改为 dependency => 0)
+        $this->add_field('poilive2d-hitokoto', 'section_hitokoto_main', 'hitokoto_suffixes', '后缀编辑格式', 'fixed_tips_callback', [
+            'dependency' => 0,
+            'config' => [
+                'yiblue'     => ['label' => '依言', 'default' => ' —— {creator}《{source}》'],
+                'jinrishici' => ['label' => '今日诗词', 'default' => ' —— （{dynasty}）{author}《{title}》'],
+                'hitokoto'   => ['label' => '官方一言', 'default' => ' —— {source}{author}'],
+                'fghrsh'     => ['label' => 'FGHRSH', 'default' => ' —— 《{source}》'],
+                'local'      => ['label' => '本地一言', 'default' => ' —— {source}（{creator}）']
+            ]
+        ], $suffixes_class);        
+
+        /* ==========================================================================
+         * TAB 4: 交互设置 (poilive2d-interactive)
+         * ========================================================================== */
+
+        add_settings_section('section_interactive_mouse', '鼠标交互设置：', null, 'poilive2d-interactive');
+        $this->add_field('poilive2d-interactive', 'section_interactive_mouse', 'mouse_hover', '自定义鼠标悬停提示', 'grouped_textarea_callback');
+        $this->add_field('poilive2d-interactive', 'section_interactive_mouse', 'mouse_click_msgs', '自定义鼠标点击提示', 'grouped_textarea_callback');
+        add_settings_section('section_interactive_other', '其他交互设置：', null, 'poilive2d-interactive');
+        $this->add_field('poilive2d-interactive', 'section_interactive_other', 'mouse_copy_msgs', '复制信息时的提示', 'repeater_single_callback');
+        $this->add_field('poilive2d-interactive', 'section_interactive_other', 'mouse_hide_msgs', '隐藏角色的提示', 'repeater_single_callback');
+        $this->add_field('poilive2d-interactive', 'section_interactive_other', 'mouse_show_msgs', '显示角色提示', 'repeater_single_callback');
+        $this->add_field('poilive2d-interactive', 'section_interactive_other', 'tab_leave_msgs', '切出页面提示', 'repeater_single_callback');
+        $this->add_field('poilive2d-interactive', 'section_interactive_other', 'tab_return_msgs', '切回页面提示', 'repeater_single_callback');
+
+        /* ==========================================================================
+         * TAB 5: 高级设置 (poilive2d-advanced)
+         * ========================================================================== */
+        
 
         add_settings_section('section_adv_welcome', '进站欢迎设置：', null, 'poilive2d-advanced');
         
         $this->add_field('poilive2d-advanced', 'section_adv_welcome', 'welcome_hourly', '每小时提示', 'grouped_double_callback');
         $this->add_field('poilive2d-advanced', 'section_adv_welcome', 'welcome_search', '搜索引擎入站提示', 'grouped_double_callback');
         $this->add_field('poilive2d-advanced', 'section_adv_welcome', 'welcome_domain', '访问本站点的提示', 'grouped_double_callback');
-        $this->add_field('poilive2d-advanced', 'section_adv_welcome', 'welcome_festival', '节日提示', 'grouped_double_callback');
-
-        add_settings_section('section_adv_mouse', '鼠标交互设置：', null, 'poilive2d-advanced');
-        $this->add_field('poilive2d-advanced', 'section_adv_mouse', 'mouse_hover', '自定义鼠标悬停提示', 'grouped_textarea_callback');
-        $this->add_field('poilive2d-advanced', 'section_adv_mouse', 'mouse_click_msgs', '自定义鼠标点击提示', 'grouped_textarea_callback');
-        $this->add_field('poilive2d-advanced', 'section_adv_mouse', 'mouse_copy_msgs', '复制信息时的提示', 'repeater_single_callback');
-        $this->add_field('poilive2d-advanced', 'section_adv_mouse', 'mouse_hide_msgs', '隐藏角色的提示', 'repeater_single_callback');
-        
+        $this->add_field('poilive2d-advanced', 'section_adv_welcome', 'welcome_festival', '节日提示', 'grouped_double_callback');        
 
         add_settings_section('section_adv_audio', 'Sing设置：', null, 'poilive2d-advanced');
         $this->add_field('poilive2d-advanced', 'section_adv_audio', 'songs', '播放列表', 'grouped_double_callback');
     }
 
     // 辅助函数：快速添加字段
-    private function add_field($page, $section, $id, $title, $callback, $args = null) {
-        add_settings_field($id, $title, array($this, $callback), $page, $section, array('id' => $id, 'args' => $args));
+    private function add_field($page, $section, $id, $title, $callback, $args = null, $class = '') {
+        add_settings_field(
+            $id, 
+            $title, 
+            array($this, $callback), 
+            $page, 
+            $section, 
+            array(
+                'id' => $id, 
+                'args' => $args,
+                'class' => $class // WordPress 会把这个类加到 tr 标签上
+            )
+        );
     }
 
     public function sanitize($input) {
@@ -210,31 +282,7 @@ public function number_callback($params) {
         $val = $this->get_val($id, 'rgba(236, 217, 188, 0.5)');
         echo '<input type="text" name="poilive2d_options['.$id.']" id="'.$id.'" value="'.esc_attr($val).'" class="color-picker" data-alpha-enabled="true">';
     }
-
-
-    public function fixed_tips_callback($params) {
-        $id = $params['id'];
-        $defaults = $params['args'];
-        $vals = $this->get_val($id, $defaults);
-        
-        echo '<fieldset>';
-        foreach ($defaults as $key => $default_text) {
-            $current_text = isset($vals[$key]) ? $vals[$key] : $default_text;
-            echo '<p style="display: flex; align-items: center; margin-bottom: 8px;">';
-            
-            // 左半部分：灰色只读框
-            echo '<input type="text" class="regular-text" style="width: 160px; background-color: #f0f0f1; color: #8c8f94; border-color: #dcdcdc; margin-right: 10px; cursor: not-allowed;" readonly value="'.esc_attr($key).'">';
-            
-            // 中间的冒号
-            echo '<span style="margin-right: 10px; font-weight: bold; color: #555;">:</span>';
-            
-            // 右半部分：可编辑文本框
-            echo '<input type="text" class="regular-text" style="width: 800px;" name="poilive2d_options['.$id.']['.$key.']" value="'.esc_attr($current_text).'">';
-            
-            echo '</p>';
-        }
-        echo '</fieldset>';
-    }
+    
 
     // --- 模式一：分组行模式 (优化对齐与按钮) ---
     public function grouped_double_callback($params) {
@@ -284,7 +332,7 @@ public function number_callback($params) {
 }
     
 
-    // --- 模式二：多行文本框模式 (解决高度对齐) ---
+    // --- 模式二：多行文本框模式 (防闪烁自适应高度版) ---
     public function grouped_textarea_callback($params) {
         $id = $params['id'];
         $raw_items = $this->get_val($id, array());
@@ -299,12 +347,29 @@ public function number_callback($params) {
         echo '<div class="grouped-textarea-container" id="'.$id.'_container">';
         foreach ($grouped as $selector => $texts) {
             $textarea_content = implode("\n", $texts);
+
+            // 【终极高度计算：加入自动折行补偿】
+            $line_count = 0;
+            foreach ($texts as $line) {
+                // 中文字符较宽，在 600px 的框里，大约 40-45 个中文字符会折行一次
+                // 这里我们设定 82 为一个基准阈值 (如果里面有大量英文会有点误差，但用来算初始高度足够了)
+                $len = mb_strlen($line, 'UTF-8');
+                if ($len > 82) {
+                    $line_count += ceil($len / 82); // 超长行折算为多行
+                } else {
+                    $line_count += 1;
+                }
+            }
+            if ($line_count == 0) $line_count = 1;
+
+            // 每一行约 21px，上下 padding 约 8px
+            $pre_height = max(30, $line_count * 21 + 8);
+
             echo '<div class="selector-group-box" style="display: flex; margin-bottom: 10px; align-items: flex-start; gap: 10px;">';
             echo '<input type="text" class="regular-text group-selector-input" style="width: 200px; font-weight: bold; margin: 0; height: 30px;" value="'.esc_attr($selector).'" placeholder="选择器">';
             echo '<span style="font-weight: bold; margin-top: 5px;">:</span>';
             echo '<div style="flex: 1;">';
-            // 关键：min-height: 30px 和 padding 与 input 保持一致，确保单行时对齐
-            echo '<textarea class="large-text group-text-area" rows="1" style="width: 600px; line-height: 1.5; padding: 3px 8px; min-height: 30px; margin: 0; resize: vertical; overflow: hidden;" placeholder="一行一条回复...">'.esc_textarea($textarea_content).'</textarea>';
+            echo '<textarea class="large-text group-text-area auto-expand-textarea" rows="1" style="width: 600px; line-height: 1.5; padding: 3px 8px; min-height: 30px; height: '.$pre_height.'px; margin: 0; resize: vertical; overflow: hidden;" placeholder="一行一条回复...">'.esc_textarea($textarea_content).'</textarea>';
             echo '</div></div>';
         }
         echo '</div>';
@@ -327,6 +392,68 @@ public function number_callback($params) {
         echo '</div>';
     }
 
+
+    // --- 模式四：纯净多行数组模式  ---
+    // --- 模式四：纯净多行数组模式 (防闪烁自适应高度版 - 包含超长折行计算) ---
+    public function textarea_array_callback($params) {
+        $id = $params['id'];
+        $desc = isset($params['args']) ? $params['args'] : '';
+        
+        $val = $this->get_val($id, array());
+        if (!is_array($val)) $val = array();
+        
+        $content = implode("\n", $val);
+
+        // 【终极高度计算：加入自动折行补偿】
+        $line_count = 0;
+        foreach ($val as $line) {
+            // mb_strwidth 自动算视觉宽度
+            $width = mb_strwidth($line, 'UTF-8');
+            
+            // 本地一言文本框 width: 800px，实测大约可容纳 105-110 个单位。
+            // 这里取 100 作为安全阈值，超过就折算为多行
+            if ($width > 112) {
+                $line_count += ceil($width / 112); 
+            } else {
+                $line_count += 1;
+            }
+        }
+        if ($line_count == 0) $line_count = 1;
+
+        // 【高度补偿计算】：1.5行高为21px，上下padding大约12px
+        $pre_height = max(30, $line_count * 21 + 12);
+
+        // 输出框体，直接写入算好的精准 height
+        echo '<textarea name="poilive2d_options['.$id.']" id="'.$id.'" class="large-text auto-expand-textarea json-array-textarea" style="width: 800px; line-height: 1.5; padding: 5px 6px; min-height: 30px; height: '.$pre_height.'px; resize: vertical; overflow: hidden;" placeholder="请输入本地一言，一行一条...">'.esc_textarea($content).'</textarea>';
+        
+        if ($desc) {
+            echo '<p class="description">'.$desc.'</p>';
+        }
+    }
+
+    // --- 增强版：固定提示列表回调 ---
+    public function fixed_tips_callback($params) {
+        $id = $params['id'];
+        $config = $params['args']['config'];
+        $vals = $this->get_val($id, array()); 
+
+        // 直接输出 fieldset，不再包裹任何带 display:none 的 div
+        echo '<fieldset>';
+        foreach ($config as $slug => $data) {
+            $label = $data['label'];
+            $default_text = $data['default'];
+            $current_text = isset($vals[$slug]) ? $vals[$slug] : $default_text;
+            
+            echo '<p style="display: flex; align-items: center; margin-bottom: 8px;">';
+            echo '<input type="text" class="regular-text" style="width: 200px; background-color: #f0f0f1; color: #8c8f94; border-color: #dcdcdc; margin-right: 10px; cursor: not-allowed;" readonly value="'.esc_attr($label).'">';
+            echo '<span style="margin-right: 10px; font-weight: bold; color: #555;">:</span>';
+            echo '<input type="text" class="regular-text" style="width: 800px;" name="poilive2d_options['.$id.']['.$slug.']" value="'.esc_attr($current_text).'">';
+            echo '</p>';
+        }
+        echo '</fieldset>';
+    }
+
+
     // 在页面底部注入一段 CSS 解决你看到的按钮大小不一致问题
     public function inject_admin_styles() {
         echo '<style>
@@ -341,6 +468,7 @@ public function number_callback($params) {
                 align-items: center !important;
                 justify-content: center !important;
             }
+            .hidden-settings-row { display: none !important; }
             .add-text-row-styled, .add-single-row-styled { color: #2271b1 !important; }
             .remove-row-styled { color: #b32d2e !important; }
         </style>';

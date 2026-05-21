@@ -13,6 +13,8 @@ $active_tab = isset($_GET['tab']) ? $_GET['tab'] : 'basic';
     <h2 class="nav-tab-wrapper">
         <a href="?page=poilive2d&tab=basic" class="nav-tab <?php echo $active_tab == 'basic' ? 'nav-tab-active' : ''; ?>">基础设置</a>
         <a href="?page=poilive2d&tab=style" class="nav-tab <?php echo $active_tab == 'style' ? 'nav-tab-active' : ''; ?>">样式设置</a>
+        <a href="?page=poilive2d&tab=hitokoto" class="nav-tab <?php echo $active_tab == 'hitokoto' ? 'nav-tab-active' : ''; ?>">一言设置</a>
+        <a href="?page=poilive2d&tab=interactive" class="nav-tab <?php echo $active_tab == 'interactive' ? 'nav-tab-active' : ''; ?>">交互设置</a>
         <a href="?page=poilive2d&tab=advanced" class="nav-tab <?php echo $active_tab == 'advanced' ? 'nav-tab-active' : ''; ?>">高级设置</a>
     </h2>
 
@@ -29,6 +31,11 @@ $active_tab = isset($_GET['tab']) ? $_GET['tab'] : 'basic';
             do_settings_sections('poilive2d-style');
         } elseif ($active_tab == 'advanced') {           
             do_settings_sections('poilive2d-advanced');
+        } elseif ($active_tab == 'hitokoto') {           
+            do_settings_sections('poilive2d-hitokoto');
+        }
+        elseif ($active_tab == 'interactive') {           
+            do_settings_sections('poilive2d-interactive');
         }
         ?>
         

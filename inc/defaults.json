@@ -39,13 +39,29 @@
   "bubble_highlight_color": "#0099cc",
 
 
-  "hitokoto_delay": 330,
+  "hitokoto_delay": 30,
   "hitokoto_api": "local",
+  "hitokoto_jinrishici_sdk": "0",
   "hitokoto_msgs": {
-    "lwl12.com": "这句一言来自 『{source}』|，是 {creator} 投稿的。",
-    "fghrsh.net": "来看看站长写的小作文 《{text}》 吧！",
-    "jinrishici.com": "希望你能找到心仪的东西！"
+    "yiblue": "歌词节选自 {year} 年的<span style=\"color: #6cf;\">《{source}》</span>，由<span style=\"color: #6cf;\">{author}</span>作曲、<span style=\"color: #6cf;\">{lyricist}</span>作词！",
+    "fghrsh": "佳句出自 <span style='{highlight}'>「{source}」</span>， 是<span style='{highlight}'>fghrsh.net</span> 收藏！",
+    "jinrishici": "诗词出自 <span style='{highlight}'>《{title}》</span>，是{dynasty}诗人{author}所作！",
+    "hitokoto":"佳句出自 <span style='{highlight}'>「{source}{author}」</span>，是 <span style='{highlight}'>{creator}</span> 在 hitokoto.cn 投稿。",
+    "local": "佳句出自 <span style='{highlight}'>「{source}（{author}）」</span>。"    
   },
+  "hitokoto_suffixes": {
+    "yiblue": "——《{source}》",
+    "fghrsh": "——「{source}」",
+    "jinrishici": "——{author}《{title}》",
+    "hitokoto": "——「{source}{author}」",
+    "local": "——「{source}（{author}）」"
+  },
+
+  "hitokoto_origin": "0",
+  "hitokoto_local_msgs": [    
+    "请输入本地一言，一行一条...|出处|作者",
+    "所谓「开拓」，就是沿着前人未尽的道路，走出更遥远的距离。|崩坏·星穹铁道|开拓者"
+  ],
 
 "welcome_hourly": [
     { "selector": "t0-5", "text": "We can sleep all day and party all night!" },
@@ -71,9 +87,10 @@
   ],
 
   "welcome_festival": [
+    { "selector": "1-1","text": "<span style='{highlight}'>元旦</span>了呢，新的一年又开始了，今年是{year}年~"},
     { "selector": "2-14", "text": "情人节快乐！愿你找到那个对的人，幸福美满！" },
     { "selector": "3-8", "text": "妇女节快乐！愿天下所有的女性都能被温柔以待！" },
-    { "selector": "3-12", "text": "植树节快乐！愿我们都能保护好地球这个美丽的家园！" },
+    { "selector": "3-12", "text": "<span style='{highlight}'>植树节</span>快乐！愿我们都能保护好地球这个美丽的家园！" },
     { "selector": "4-5", "text": "清明节快乐！愿逝去的亲人在另一个世界一切安好！" },
     { "selector": "5-1", "text": "劳动节快乐！愿你工作顺利，生活美满！" },
     { "selector": "6-22", "text": "夏至快乐！愿你在这个夏天过得清凉愉快！" },
@@ -186,8 +203,20 @@
     "你都复制了些什么呀，转载要记得加上出处哦！"
   ],
   "mouse_hide_msgs": [
-    "我们还能再见面的吧…？"
+    "会不会 可能 还能 相见？",
+    "明天见！"
   ],
+  "mouse_show_msgs": [
+    "嗨，想我了吗♪",
+    "Did you miss me？"
+  ],
+  "tab_leave_msgs": [
+    "要出门了吗？路上小心！"
+  ],
+  "tab_return_msgs": [
+    "欢迎回来！"
+  ],
+
  "songs": [
   { "selector": "兔子先生", "text": "http://i.y.qq.com/rsc/fcgi-bin/fcg_pyq_play.fcg?songid=&songmid=003kEyJ20vINjT&songtype=1&fromtag=50&uin=1531918140&code=9D435" },
   { "selector": "惜春去", "text": "http://i.y.qq.com/rsc/fcgi-bin/fcg_pyq_play.fcg?songid=&songmid=0015Is4c1G8MaC&songtype=1&fromtag=50&uin=1531918140&code=433F1" },
