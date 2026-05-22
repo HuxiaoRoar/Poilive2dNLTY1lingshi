@@ -21,7 +21,6 @@ class PoiLive2D_Settings {
         } else {
             $this->defaults = array();
         }
-
         add_action('admin_head', array($this, 'inject_admin_styles')); // 注入自定义 CSS
     }
     public function page_init() {
@@ -458,8 +457,8 @@ public function number_callback($params) {
     public function inject_admin_styles() {
         echo '<style>
             .remove-row-styled, .add-text-row-styled, .add-single-row-styled {
-                width: 30px !important;
-                height: 30px !important;
+                width: 40px !important;
+                height: 40px !important;
                 padding: 0 !important;
                 line-height: 28px !important;
                 text-align: center !important;
@@ -471,7 +470,28 @@ public function number_callback($params) {
             .hidden-settings-row { display: none !important; }
             .add-text-row-styled, .add-single-row-styled { color: #2271b1 !important; }
             .remove-row-styled { color: #b32d2e !important; }
+
+            /* 1. 给所有标签强制统一尺寸和底边距，彻底消灭切换时的物理形变 */
+            .nav-tab-wrapper .poilive2d-tab-link {
+                box-sizing: border-box !important;
+radio_callback                border-bottom: 1px solid transparent !important; /* 未激活时用透明边框占位，保持高度不变 */
+                transition: none !important; /* 杀掉可能存在的 WordPress 原生过度动画 */
+            }
+
+            /* 2. 激活状态下，仅仅改变底部边框的颜色，绝不改变尺寸 */
+            .nav-tab-wrapper .poilive2d-tab-link.nav-tab-active {
+                border-bottom: 1px solid #f0f0f1 !important; /* 配合 WordPress 默认后台的背景色 */
+            }
+
+            /* 3. 给最外圈的包裹器一个固定的底边距，防止与表单发生折叠突变 */
+            h2.nav-tab-wrapper, 
+            .wrap h2.nav-tab-wrapper {
+                margin-bottom: 15px !important; 
+                padding-bottom: 0 !important;
+            }         
+            
         </style>';
+        
     }
     
     

@@ -1,47 +1,46 @@
 jQuery(document).ready(function ($) {
 
     // ==========================================
-    // 0. 终极联动与防闪烁模块 (加入 isInit 判定)
+    // 0. 切换标签页的智能记忆逻辑
     // ==========================================
-    function syncDisplay(isInit) {
-        var api = $('#hitokoto_api').val();
-        var origin = $('input[name="poilive2d_options[hitokoto_origin]"]:checked').val();
 
-        // 1. 操作 CSS 类进行物理显隐
-        $('#hitokoto_local_msgs').closest('tr').toggleClass('hidden-settings-row', api !== 'local');
-        $('[name^="poilive2d_options[hitokoto_msgs]"]').first().closest('tr').toggleClass('hidden-settings-row', origin !== '1');
-        $('[name^="poilive2d_options[hitokoto_suffixes]"]').first().closest('tr').toggleClass('hidden-settings-row', origin !== '0');
-        $('input[name="poilive2d_options[hitokoto_jinrishici_sdk]"]').first().closest('tr').toggleClass('hidden-settings-row', api !== 'jinrishici');
+    var activeTab = localStorage.getItem('poilive2d_active_tab') || 'basic';
 
-        // 2. 专门拦截“切换后变一行”的幽灵 Bug
-        // 如果是用户手动切换的（不是刚刷新的），就延迟20毫秒，等它彻底显示出来再重算高度
-        if (!isInit) {
-            setTimeout(function () {
-                $('.group-text-area, .auto-expand-textarea').each(function () {
-                    if ($(this).is(':visible')) {
-                        this.style.height = 'auto'; // 先释放它的旧高度
-                        this.style.height = (this.scrollHeight + 2) + 'px'; // 重新读取真正的文字高度
-                    }
-                });
-            }, 20);
-        }
-    }
+    // 先用 jQuery 维持住当前页面的物理显示（防止等下面样式拔掉时发生闪烁）
+    $('#tab-' + activeTab).show();
 
-    // 绑定手动切换事件：传入 false，代表这是“中途操作”
-    $(document).on('change', '#hitokoto_api, input[name="poilive2d_options[hitokoto_origin]"]', function () {
-        syncDisplay(false);
+    // 核心：成功接管！立刻拔掉内联的临时 !important 样式，将隐藏/显示的控制权彻底还给 jQuery
+    $('#poilive2d-pre-render-style').remove();
+
+    // 此时新页面已经完全可见，高度100%准备就绪，立刻自适应撑开多行文本框
+    $('#tab-' + activeTab).find('textarea').each(function () {
+        this.style.height = 'auto';
+        this.style.height = (this.scrollHeight + 2) + 'px';
     });
 
-    // 页面加载时触发：传入 true，代表这是“刚出生”
-    $(document).ready(function () {
-        syncDisplay(true); // 此时会隐藏该隐藏的，但绝对不会触发重新计算
 
-        // 页面刚加载时，只修正旧的动态输入框，坚决放过本地一言(auto-expand-textarea)，让 PHP 的高度完美保留！
-        $('.group-text-area').each(function () {
-            if ($(this).is(':visible')) {
-                this.style.height = 'auto';
-                this.style.height = (this.scrollHeight + 2) + 'px';
-            }
+    $('.poilive2d-tab-link').on('click', function (e) {
+        e.preventDefault();
+        if ($(this).hasClass('nav-tab-active')) return;
+
+        $('.poilive2d-tab-link').removeClass('nav-tab-active');
+        $(this).addClass('nav-tab-active');
+
+        var targetTab = $(this).data('tab');
+        var $currentContent = $('.poilive2d-tab-content:visible');
+        var $newContent = $('#tab-' + targetTab);
+
+        localStorage.setItem('poilive2d_active_tab', targetTab);
+
+        // 平滑的淡出淡入
+        $currentContent.fadeOut(150, function () {
+            $newContent.fadeIn(150, function () {
+                // 面板展现后，自动撑开文本框
+                $(this).find('textarea').each(function () {
+                    this.style.height = 'auto';
+                    this.style.height = (this.scrollHeight + 2) + 'px';
+                });
+            });
         });
     });
 
@@ -384,18 +383,34 @@ jQuery(document).ready(function ($) {
     // ==========================================
     // 5. 恢复本页默认设置
     // ==========================================
-    $('#poilive2d-reset-defaults').on('click', function (e) {
-        e.preventDefault();
+    $('#poilive2d-reset-defaults').on('click', function () {
+        if (!confirm('确定要将【当前标签页】的设置恢复为默认吗？未保存的其他页面修改不会受影响。')) {
+            return;
+        }
 
-        if (confirm('确定要将当前页面的设置恢复为初始默认值吗？\n\n注意：此操作仅改变当前页面设置，要点击底部的“保存设置”后才会真正生效。')) {
-            if (typeof poilive2d_defaults !== 'undefined' && !$.isEmptyObject(poilive2d_defaults)) {
-                syncJSONToDOM(poilive2d_defaults);
-                alert('已成功填入默认值！检查无误后，请点击“保存设置”以生效。');
-            } else {
-                alert('恢复失败：未能读取到 defaults.json 文件。');
+        // 获取默认数据 (假设你通过全局变量获取 defaults_json)
+        var defaults = poilive2d_defaults;
+
+        // 核心思路：只在当前“显示”的 tab 里寻找表单元素
+        $('.poilive2d-tab-content:visible').find('input, select, textarea').each(function () {
+            var inputName = $(this).attr('name');
+
+            // 因为 WP 生成的 name 格式通常是 "poilive2d_options[key]"
+            var match = inputName.match(/poilive2d_options\[(.*?)\]/);
+            if (match && match[1]) {
+                var key = match[1];
+                if (defaults[key] !== undefined) {
+                    // 根据输入框类型给它赋默认值，这里是你原有的 syncJSONToDOM 逻辑的一部分
+                    if ($(this).is(':checkbox') || $(this).is(':radio')) {
+                        $(this).prop('checked', $(this).val() == defaults[key]);
+                    } else {
+                        $(this).val(defaults[key]);
+                    }
+                }
             }
-        }        
+        });
     });
+
 
     //快捷键保存。
     $(document).on('keydown', function (e) {
@@ -416,26 +431,6 @@ jQuery(document).ready(function ($) {
         localStorage.setItem('poilive2d_visited', '1');
     }
 
-    //离开提醒。
-    var isDirty = false;
-
-    // 监听表单变化
-    $('#poilive2d-settings-form').on('change input', 'input, select, textarea', function () {
-        isDirty = true;
-    });
-
-    // 表单提交时重置，避免保存后刷新还提示
-    $('#poilive2d-settings-form').on('submit', function () {
-        isDirty = false;
-    });
-
-    // 页面离开前检测
-    $(window).on('beforeunload', function (e) {
-        if (isDirty) {
-            e.preventDefault();
-            e.returnValue = '您有未保存的更改，确定要离开吗？';
-            return e.returnValue;
-        }
-    });
+    
 });
 
