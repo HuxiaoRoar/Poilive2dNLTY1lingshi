@@ -70,7 +70,7 @@ function live2d_head()
         $dock_css = ($dock === 'right') ? "right: {$margin}px !important; left: auto !important;" : "left: {$margin}px !important; right: auto !important;";
         
         // 增加 transform: translateZ(0) 强制硬件加速，锁定最顶层叠上下文
-        $css .= "#landlord { width: {$r_w}px !important; height: {$r_h}px !important; {$dock_css} z-index: 99999 !important; transform: translateZ(0); }";
+        $css .= "#landlord { width: {$r_w}px !important; height: {$r_h}px !important; {$dock_css} z-index: 99 !important; transform: translateZ(0); }";
         $css .= "#live2d { width: {$r_w}px !important; height: {$r_h}px !important; }";
         
         if ($hide_w > 0) {

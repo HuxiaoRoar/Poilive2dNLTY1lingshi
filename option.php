@@ -67,12 +67,12 @@ $active_tab = isset($_GET['tab']) ? $_GET['tab'] : 'basic';
 </form>
 
     <div id="poilive2d-json-modal" style="display:none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 9999; align-items: center; justify-content: center;">
-        <div class="modal-content" style="background: #fff; width: 800px; max-width: 90%; border-radius: 5px; box-shadow: 0 5px 15px rgba(0,0,0,0.5); padding: 20px;">
+        <div class="modal-content" style="background: #fff; width: 900px; max-width: 90%; border-radius: 5px; box-shadow: 0 5px 15px rgba(0,0,0,0.5); padding: 20px;">
             <h3>JSON 配置编辑器</h3>
             <p class="description">你可以直接在此粘贴大段的 JSON 配置，点击“同步到界面”后，上方的图形化表单会自动更新（仅限当前选项卡的内容）。</p>
             <textarea id="poilive2d-json-textarea" style="width:100%; height:450px; font-family: monospace; border: 1px solid #ddd;"></textarea>
             <div style="margin-top: 15px;">
-                <button type="button" class="button button-primary" id="poilive2d-sync-json">同步到界面</button>
+                <button type="button" class="button button-primary" id="poilive2d-sync-json">直接保存配置</button>
                 <button type="button" class="button" id="poilive2d-close-modal">取消退出</button>
             </div>
         </div>

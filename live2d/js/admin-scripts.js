@@ -35,10 +35,12 @@ jQuery(document).ready(function ($) {
         // 平滑的淡出淡入
         $currentContent.fadeOut(150, function () {
             $newContent.fadeIn(150, function () {
-                // 面板展现后，自动撑开文本框
+                // 面板展现后，如果 PHP 已经给了具体高度，就不再去重新撑开它，避免闪烁
                 $(this).find('textarea').each(function () {
-                    this.style.height = 'auto';
-                    this.style.height = (this.scrollHeight + 2) + 'px';
+                    if (this.style.height === 'auto' || !this.style.height) {
+                        this.style.height = 'auto';
+                        this.style.height = (this.scrollHeight + 2) + 'px';
+                    }
                 });
             });
         });
@@ -65,7 +67,6 @@ jQuery(document).ready(function ($) {
         // 获取真实的文字高度并补偿 2px 的边框误差
         this.style.height = (this.scrollHeight + 2) + 'px';
     });
-    $('.group-text-area, .auto-expand-textarea').each(function () { $(this).trigger('input'); });
 
 
     // ==========================================
@@ -126,19 +127,24 @@ jQuery(document).ready(function ($) {
             var globalIndex = 0;
             var isTextarea = $(this).hasClass('grouped-textarea-container');
 
+            // 【核心修改 - 表单提交拦截】
             $(this).find('.selector-group-box').each(function () {
                 var selector = $(this).find('.group-selector-input').val();
                 if (!selector) return;
                 var lines = isTextarea ? $(this).find('.group-text-area').val().split(/\r?\n/)
                     : $(this).find('.group-text-input').map(function () { return $(this).val(); }).get();
                 var box = $(this);
-                lines.forEach(function (val) {
-                    if (val.trim() !== '') {
-                        box.append('<input type="hidden" name="poilive2d_options[' + containerId + '][' + globalIndex + '][selector]" value="' + selector + '">');
-                        box.append('<input type="hidden" name="poilive2d_options[' + containerId + '][' + globalIndex + '][text]" value="' + val.trim() + '">');
-                        globalIndex++;
-                    }
-                });
+
+                var validLines = lines.filter(function (v) { return v.trim() !== ''; });
+                if (validLines.length > 0) {
+                    // 一个 selector 只生成一个 hidden input
+                    box.append('<input type="hidden" name="poilive2d_options[' + containerId + '][' + globalIndex + '][selector]" value="' + selector + '">');
+                    // 对应的 text 循环生成带有 [] 的数组 input
+                    validLines.forEach(function (val) {
+                        box.append('<input type="hidden" name="poilive2d_options[' + containerId + '][' + globalIndex + '][text][]" value="' + val.trim() + '">');
+                    });
+                    globalIndex++;
+                }
             });
             $(this).find('input:not([type=hidden]), textarea').removeAttr('name');
         });
@@ -171,12 +177,14 @@ jQuery(document).ready(function ($) {
     // ==========================================
     var jsonEditor;
 
-    // A. 从图形界面抓取数据 -> 生成 JSON
+    // A. 从图形界面抓取数据 -> 生成 JSON (仅限当前活动标签页)
     function scrapeDOMToJSON() {
         var data = {};
+        // 【核心修改】：锁定当前显示的标签页
+        var $currentTab = $('.poilive2d-tab-content:visible');
 
-        // 1. 抓取简单控件 (文本、数字、颜色、下拉、新加的单行转数组输入框)
-        $('#poilive2d-settings-form').find('[name^="poilive2d_options["]').each(function () {
+        // 1. 抓取简单控件
+        $currentTab.find('[name^="poilive2d_options["]').each(function () {
             var name = $(this).attr('name');
             var match = name.match(/poilive2d_options\[(.*?)\]/);
             if (match && match[1]) {
@@ -186,7 +194,6 @@ jQuery(document).ready(function ($) {
                 var val = $(this).val();
                 if ($(this).is(':radio') && !$(this).is(':checked')) return;
 
-                // (NEW) 识别专门的数组文本框，拆分成 Array
                 if ($(this).hasClass('json-array-textarea')) {
                     var lines = val.split(/\r?\n/).filter(function (v) { return v.trim() !== ''; });
                     data[key] = lines;
@@ -204,7 +211,7 @@ jQuery(document).ready(function ($) {
         });
 
         // 2. 抓取分组行/文本框
-        $('.grouped-rows-container, .grouped-textarea-container').each(function () {
+        $currentTab.find('.grouped-rows-container, .grouped-textarea-container').each(function () {
             var key = $(this).attr('id').replace('_container', '');
             data[key] = [];
             var isTextarea = $(this).hasClass('grouped-textarea-container');
@@ -216,16 +223,15 @@ jQuery(document).ready(function ($) {
                 var lines = isTextarea ? $(this).find('.group-text-area').val().split(/\r?\n/)
                     : $(this).find('.group-text-input').map(function () { return $(this).val(); }).get();
 
-                lines.forEach(function (txt) {
-                    if (txt && txt.trim()) {
-                        data[key].push({ selector: sel, text: txt.trim() });
-                    }
-                });
+                var validLines = lines.map(function(t) { return t.trim(); }).filter(function(t) { return t !== ''; });
+                if (validLines.length > 0) {
+                    data[key].push({ selector: sel, text: validLines });
+                }
             });
         });
 
         // 3. 抓取单列重复
-        $('.single-repeater-container').each(function () {
+        $currentTab.find('.single-repeater-container').each(function () {
             var key = $(this).attr('id').replace('_container', '');
             data[key] = [];
             $(this).find('.single-text-input').each(function () {
@@ -247,8 +253,12 @@ jQuery(document).ready(function ($) {
                 $groupedRows.empty();
                 var groupedObj = {};
                 (Array.isArray(value) ? value : []).forEach(function (item) {
-                    if (!groupedObj[item.selector]) groupedObj[item.selector] = [];
-                    groupedObj[item.selector].push(item.text);
+                    // 严格校验：确保 selector 存在，且 text 必须是数组
+                    if (item.selector && Array.isArray(item.text) && item.text.length > 0) {
+                        if (!groupedObj[item.selector]) groupedObj[item.selector] = [];
+                        // 直接拼接数组
+                        groupedObj[item.selector] = groupedObj[item.selector].concat(item.text);
+                    }
                 });
 
                 if ($.isEmptyObject(groupedObj)) groupedObj[''] = [''];
@@ -278,9 +288,14 @@ jQuery(document).ready(function ($) {
                 $groupedTextarea.empty();
                 var gObj = {};
                 (Array.isArray(value) ? value : []).forEach(function (item) {
-                    if (!gObj[item.selector]) gObj[item.selector] = [];
-                    gObj[item.selector].push(item.text);
+                    // 严格校验：确保 selector 存在，且 text 必须是数组
+                    if (item.selector && Array.isArray(item.text) && item.text.length > 0) {
+                        if (!gObj[item.selector]) gObj[item.selector] = [];
+                        // 直接拼接数组
+                        gObj[item.selector] = gObj[item.selector].concat(item.text);
+                    }
                 });
+
                 if ($.isEmptyObject(gObj)) gObj[''] = [''];
 
                 $.each(gObj, function (sel, texts) {
@@ -371,44 +386,60 @@ jQuery(document).ready(function ($) {
             var rawJson = jsonEditor.getValue();
             var parsedData = JSON.parse(rawJson);
 
+            // 【核心逻辑】：先将修改后的 JSON 静默同步回当前页面的 DOM 表单
             syncJSONToDOM(parsedData);
-
             $('#poilive2d-json-modal').hide();
-            alert('同步成功！界面已更新，检查无误后请点击网页底部的“保存设置”以写入数据库。');
+
+            // 【核心逻辑】：直接触发 WordPress 原生提交按钮，实现自动保存并刷新
+            var $btn = $(this);
+            $btn.text('保存中...').prop('disabled', true);
+            $('#submit').trigger('click');
+
         } catch (err) {
             alert('解析 JSON 失败，请检查格式是否正确！\n错误详情: ' + err.message);
         }
     });
 
     // ==========================================
-    // 5. 恢复本页默认设置
+    // 5. 真正完美的恢复本页默认设置 (自动保存版)
     // ==========================================
     $('#poilive2d-reset-defaults').on('click', function () {
-        if (!confirm('确定要将【当前标签页】的设置恢复为默认吗？未保存的其他页面修改不会受影响。')) {
+        if (!confirm('确定要将【当前标签页】的设置恢复为初始默认状态，并直接保存吗？\n\n注意：未保存的其他页面修改不会受影响。')) {
             return;
         }
 
-        // 获取默认数据 (假设你通过全局变量获取 defaults_json)
-        var defaults = poilive2d_defaults;
+        var defaults = typeof poilive2d_defaults !== 'undefined' ? poilive2d_defaults : {};
+        var subsetToReset = {};
 
-        // 核心思路：只在当前“显示”的 tab 里寻找表单元素
-        $('.poilive2d-tab-content:visible').find('input, select, textarea').each(function () {
-            var inputName = $(this).attr('name');
+        // 收集当前可见标签页里所有的 key
+        $('.poilive2d-tab-content:visible').find('[name^="poilive2d_options["], .grouped-rows-container, .grouped-textarea-container, .single-repeater-container, .json-array-textarea').each(function () {
+            var key;
+            var nameAttr = $(this).attr('name');
+            var idAttr = $(this).attr('id');
 
-            // 因为 WP 生成的 name 格式通常是 "poilive2d_options[key]"
-            var match = inputName.match(/poilive2d_options\[(.*?)\]/);
-            if (match && match[1]) {
-                var key = match[1];
-                if (defaults[key] !== undefined) {
-                    // 根据输入框类型给它赋默认值，这里是你原有的 syncJSONToDOM 逻辑的一部分
-                    if ($(this).is(':checkbox') || $(this).is(':radio')) {
-                        $(this).prop('checked', $(this).val() == defaults[key]);
-                    } else {
-                        $(this).val(defaults[key]);
-                    }
-                }
+            if (nameAttr) {
+                var match = nameAttr.match(/poilive2d_options\[(.*?)\]/);
+                if (match && match[1]) key = match[1];
+            } else if (idAttr) {
+                key = idAttr.replace('_container', '');
+            }
+
+            if (key && defaults[key] !== undefined) {
+                subsetToReset[key] = defaults[key];
             }
         });
+
+        // 1. 静默恢复数据到界面
+        syncJSONToDOM(subsetToReset);
+
+        // 2. 视觉反馈并触发自动保存
+        var $btn = $(this);
+        $btn.text('正在恢复并保存...').css('color', '#34a853').prop('disabled', true);
+
+        // 给浏览器 100ms 缓冲时间渲染表单，然后猛击提交按钮
+        setTimeout(function () {
+            $('#submit').trigger('click');
+        }, 100);
     });
 
 

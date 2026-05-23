@@ -62,143 +62,450 @@
     "请输入本地一言，一行一条...|出处|作者",
     "所谓「开拓」，就是沿着前人未尽的道路，走出更遥远的距离。|崩坏·星穹铁道|开拓者"
   ],
-
-"welcome_hourly": [
-    { "selector": "t0-5", "text": "We can sleep all day and party all night!" },
-    { "selector": "t5-7", "text": "早上好！早餐一定要吃哦！小笼包，叉烧包，奶黄芝麻豆沙包！挑一个吧！" },
-    { "selector": "t7-11", "text": "上午好！工作顺利嘛，不要久坐，多起来走动走动哦！" },
-    { "selector": "t11-14", "text": "已经中午了，准备吃什么呀？好饿好饿好饿(๑´ㅂ`๑)" },
-    { "selector": "t14-17", "text": "午后容易犯困呢，打起精神别摸鱼啦，今天的目标完成了吗？" },
-    { "selector": "t17-18", "text": "傍晚了！别忘了看看窗外的晚霞，很美丽呢，最美不过夕阳红~~" },
-    { "selector": "t18-19", "text": "晚餐时间到！今晚又该吃什么呢？云吞面，麻辣烫，羊肉串，蟹壳黄！" },
-    { "selector": "t19-21", "text": "晚上好，今天过得怎么样？休息一会，开局游戏吧！" },
-    { "selector": "t21-24", "text": "已经这么晚了呀，你也是深夜诗人吗？早点休息吧，晚安~~" }
+  "welcome_hourly": [
+    {
+      "selector": "t0-5",
+      "text": [
+        "We can sleep all day and party all night!"
+      ]
+    },
+    {
+      "selector": "t5-7",
+      "text": [
+        "早上好！早餐一定要吃哦！小笼包，叉烧包，奶黄芝麻豆沙包！挑一个吧！"
+      ]
+    },
+    {
+      "selector": "t7-11",
+      "text": [
+        "上午好！工作顺利嘛，不要久坐，多起来走动走动哦！"
+      ]
+    },
+    {
+      "selector": "t11-14",
+      "text": [
+        "已经中午了，准备吃什么呀？好饿好饿好饿(๑´ㅂ`๑)"
+      ]
+    },
+    {
+      "selector": "t14-17",
+      "text": [
+        "午后容易犯困呢，打起精神别摸鱼啦，今天的目标完成了吗？"
+      ]
+    },
+    {
+      "selector": "t17-18",
+      "text": [
+        "傍晚了！别忘了看看窗外的晚霞，很美丽呢，最美不过夕阳红~~"
+      ]
+    },
+    {
+      "selector": "t18-19",
+      "text": [
+        "晚餐时间到！今晚又该吃什么呢？云吞面，麻辣烫，羊肉串，蟹壳黄！"
+      ]
+    },
+    {
+      "selector": "t19-21",
+      "text": [
+        "晚上好，今天过得怎么样？休息一会，开局游戏吧！"
+      ]
+    },
+    {
+      "selector": "t21-24",
+      "text": [
+        "已经这么晚了呀，你也是深夜诗人吗？早点休息吧，晚安~~"
+      ]
+    }
   ],
   "welcome_search": [
-    { "selector": "baidu", "text": "你好呀，来自百度的小伙伴！很高兴遇到你！<br>欢迎访问<span style='color:#0099cc;'>「 {title} 」</span>" },
-    { "selector": "bing", "text": "你好呀，来自必应的小伙伴！很高兴遇到你！<br>欢迎访问<span style='color:#0099cc;'>「 {title} 」</span>" },
-    { "selector": "so", "text": "你好呀，来自360的小伙伴！很高兴遇到你！<br>欢迎访问<span style='color:#0099cc;'>「 {title} 」</span>" },
-    { "selector": "google", "text": "你好呀，来自谷歌的小伙伴！很高兴遇到你！<br>你一定是一个技术宅吧！欢迎访问<span style='color:#0099cc;'>「 {title} 」</span>" }
+    {
+      "selector": "baidu",
+      "text": [
+        "你好呀，来自百度的小伙伴！很高兴遇到你！<br>欢迎访问<span style='color:#0099cc;'>「 {title} 」</span>"
+      ]
+    },
+    {
+      "selector": "bing",
+      "text": [
+        "你好呀，来自必应的小伙伴！很高兴遇到你！<br>欢迎访问<span style='color:#0099cc;'>「 {title} 」</span>"
+      ]
+    },
+    {
+      "selector": "so",
+      "text": [
+        "你好呀，来自360的小伙伴！很高兴遇到你！<br>欢迎访问<span style='color:#0099cc;'>「 {title} 」</span>"
+      ]
+    },
+    {
+      "selector": "google",
+      "text": [
+        "你好呀，来自谷歌的小伙伴！很高兴遇到你！<br>你一定是一个技术宅吧！欢迎访问<span style='color:#0099cc;'>「 {title} 」</span>"
+      ]
+    }
   ],
   "welcome_domain": [
-    { "selector": "www.luotianyi.blue", "text": "<span style='color:#66CCFF;'>❤ 人海相遇，是个奇迹，很高兴在这里遇见你！虎啸！❤</span>" },
-    { "selector": "github", "text": "你好呀，来自Github的大佬！很高兴遇到你！<br>欢迎访问<span style='color:#0099cc;'>「 {title} 」</span>" },
-    { "selector": "bilibili", "text": "你好呀，来自B站的小伙伴！很高兴遇到你！<br>是二次元的Friends呢！" }
+    {
+      "selector": "www.luotianyi.blue",
+      "text": [
+        "<span style='color:#66CCFF;'>❤ 人海相遇，是个奇迹，很高兴在这里遇见你！虎啸！❤</span>"
+      ]
+    },
+    {
+      "selector": "github",
+      "text": [
+        "你好呀，来自Github的大佬！很高兴遇到你！<br>欢迎访问<span style='color:#0099cc;'>「 {title} 」</span>"
+      ]
+    },
+    {
+      "selector": "bilibili",
+      "text": [
+        "你好呀，来自B站的小伙伴！很高兴遇到你！<br>是二次元的Friends呢！"
+      ]
+    }
   ],
-
   "welcome_festival": [
-    { "selector": "1-1","text": "<span style='{highlight}'>元旦</span>了呢，新的一年又开始了，今年是{year}年~"},
-    { "selector": "2-14", "text": "情人节快乐！愿你找到那个对的人，幸福美满！" },
-    { "selector": "3-8", "text": "妇女节快乐！愿天下所有的女性都能被温柔以待！" },
-    { "selector": "3-12", "text": "<span style='{highlight}'>植树节</span>快乐！愿我们都能保护好地球这个美丽的家园！" },
-    { "selector": "4-5", "text": "清明节快乐！愿逝去的亲人在另一个世界一切安好！" },
-    { "selector": "5-1", "text": "劳动节快乐！愿你工作顺利，生活美满！" },
-    { "selector": "6-22", "text": "夏至快乐！愿你在这个夏天过得清凉愉快！" },
-    { "selector": "9-29", "text": "中秋节快乐！愿你和家人团团圆圆，幸福美满！" }
+    {
+      "selector": "1-1",
+      "text": [
+        "<span style='{highlight}'>元旦</span>了呢，新的一年又开始了，今年是{year}年~"
+      ]
+    },
+    {
+      "selector": "2-14",
+      "text": [
+        "情人节快乐！愿你找到那个对的人，幸福美满！"
+      ]
+    },
+    {
+      "selector": "3-8",
+      "text": [
+        "妇女节快乐！愿天下所有的女性都能被温柔以待！"
+      ]
+    },
+    {
+      "selector": "3-12",
+      "text": [
+        "<span style='{highlight}'>植树节</span>快乐！愿我们都能保护好地球这个美丽的家园！"
+      ]
+    },
+    {
+      "selector": "4-5",
+      "text": [
+        "清明节快乐！愿逝去的亲人在另一个世界一切安好！"
+      ]
+    },
+    {
+      "selector": "5-1",
+      "text": [
+        "劳动节快乐！愿你工作顺利，生活美满！"
+      ]
+    },
+    {
+      "selector": "6-22",
+      "text": [
+        "夏至快乐！愿你在这个夏天过得清凉愉快！"
+      ]
+    },
+    {
+      "selector": "9-29",
+      "text": [
+        "中秋节快乐！愿你和家人团团圆圆，幸福美满！"
+      ]
+    }
   ],
-
   "mouse_hover": [
-    { "selector": ".post-meta a", "text": "来看看 <span style='color:#0099cc;'>「{text}」</span> 嘛！" },
-    { "selector": ".post .post-title", "text": "来看看站长写的小作文 <span style='color:#0099cc;'>《{text}》</span> 吧！" },
-    { "selector": ".feature-content a", "text": "这是超级热门的 <span style='color:#0099cc;'>「{text}」</span> ，看一下！看一下！" },
-    { "selector": ".searchbox", "text": "希望你能找到心仪的东西！" },
-    { "selector": ".top-social", "text": "这是站长的社交账号！关注站长喵，关注站长谢谢喵！" },
-    { "selector": ".header-tou", "text": "转起来咯！" },
-    { "selector": ".zilla-likes", "text": "听说点这个，站长会很开心喵~" },
-    { "selector": ".cd-top", "text": "拉一下这个，页面就咻的飞上去咯！" },
-    { "selector": ".cd-top", "text": "起飞咯" },
-    { "selector": ".cd-top", "text": "回到最初的起点！" },
-    { "selector": ".site-title", "text": "跃迁即将启动！目的地:网站扉页！" },
-    { "selector": ".site-title", "text": "要回到首页再看看嘛！" },
-    { "selector": ".site-title", "text": "返回首页" },
-    { "selector": ".comments", "text": "欢迎留言！有问必答！" },
-    { "selector": ".comments", "text": "善语结善缘,恶语伤人心" },
-    { "selector": ".comments", "text": "这是评论区,不是无人区（虽然暂时是）" },
-    { "selector": ".comments", "text": "有什么想和大家分享的吗" },
-    { "selector": ".comments", "text": "想和站长讨论些什么？" },
-    { "selector": ".comments", "text": "这是一个自由的社区。" },
-    { "selector": ".comments", "text": "申请互动！" },
-    { "selector": ".comments", "text": "发个友善的评论见证当下！" },
-    { "selector": ".post-nepre.previous", "text": "想看看上一篇文章？" },
-    { "selector": ".post-nepre.next", "text": "再看看下一篇文章？" },
-    { "selector": ".reward-open", "text": "请站长一杯果茶吧！" },
-    { "selector": "#video-btn.loadvideo.videolive", "text": "走过路过，不要错过！精彩演出，即将上演" },
-    { "selector": "#video-btn.loadvideo.videolive", "text": "旁友，这有好康的视频，看看？" },
-    { "selector": "#video-btn.loadvideo.videolive", "text": "来看看我的视频吧！" },
-    { "selector": "#video-add", "text": "诶？不想看这个？好嘛，都依你，点击换一个吧。" },
-    { "selector": "#video-add", "text": "想换台嘛？" },
-    { "selector": "#video-add", "text": "换个视频再看看吧！" },
-    { "selector": "#video-add", "text": "下个视频更精彩！" },
-    { "selector": "#video-add", "text": "随机换个新视频吧！" },
-    { "selector": "#video-btn.haslive.video-play", "text": "继续播放！" },
-    { "selector": "#video-btn.haslive.video-play", "text": "休息好了吗？那我继续播放咯。" },
-    { "selector": "#video-btn.haslive.video-play", "text": "再看一会吧" },
-    { "selector": "#video-btn.haslive.video-play", "text": "至少把这个视频看完嘛！" },
-    { "selector": "#video-btn.haslive.video-play", "text": "觉得视频好看嘛？别忘了来b站关注天依哦" },
-    { "selector": "#hide-button", "text": "完美继承站长的话痨，如果觉得烦，点一下我就先润咯~" },
-    { "selector": "#sing-button", "text": "想听我唱歌吗？" },
-    { "selector": "#sing-button", "text": "为了你唱下去！" },
-    { "selector": "#sing-button", "text": "准备唱歌咯！" },
-    { "selector": "#catalog-button", "text": "可以查看文章结构！" },
-    { "selector": "#catalog-button", "text": "需要看下当前目录嘛？" },
-    { "selector": "#change-button", "text": "Henshin" },
-    { "selector": "#change-button", "text": "Set!Henshin" },
-    { "selector": "#change-button", "text": "启动超级变化形态！" },
-    { "selector": "#change-button", "text": "盖亚！（？？？）" },
-    { "selector": "#change-button", "text": "大声的喊出我的名字！" },
-    { "selector": "#change-button", "text": "你的神光棒准备好了吗？" },
-    { "selector": "#change-button", "text": "你也想化身为光吗？" },
-    { "selector": "#change-button", "text": "到底要选哪个呢？到底要选哪个呢？到底要选哪个呢？" },
-    { "selector": "#change-button", "text": "发生什么事了,发生什么事了,发生什么事了!" },
-    { "selector": "#change-button", "text": "一旦接受了自己的软弱，那我就是，无敌的！" },
-    { "selector": "#change-button", "text": "释放自我！走我的路，假面骑士贞贞贞贞德" },
-    { "selector": "#pagination", "text": "想看看更久远的内容？" },
-    { "selector": "#pagination", "text": "你也想回到过去吗？" },
-    { "selector": "#pagination", "text": "到底了~" },
-    { "selector": "#pagination", "text": "要不再去搜索看看" },
-    { "selector": "#switch-button", "text": "换个衣服！" },
-    { "selector": "#switch-button", "text": "祈祷这次衣服不要重复！" },
-    { "selector": ".changeSkin-gear", "text": "换个背景，换个心情" },
-    { "selector": ".changeSkin-gear", "text": "可以更换背景哦" },
-    { "selector": ".control-btn-serif", "text": "衬线字体，也就是宋体啦！" },
-    { "selector": ".control-btn-sans-serif", "text": "无衬线体，也就是黑体啦！" }
+    {
+      "selector": ".post-meta a",
+      "text": [
+        "来看看 <span style='color:#0099cc;'>「{text}」</span> 嘛！"
+      ]
+    },
+    {
+      "selector": ".post .post-title",
+      "text": [
+        "来看看站长写的小作文 <span style='color:#0099cc;'>《{text}》</span> 吧！"
+      ]
+    },
+    {
+      "selector": ".feature-content a",
+      "text": [
+        "这是超级热门的 <span style='color:#0099cc;'>「{text}」</span> ，看一下！看一下！"
+      ]
+    },
+    {
+      "selector": ".searchbox",
+      "text": [
+        "希望你能找到心仪的东西！"
+      ]
+    },
+    {
+      "selector": ".top-social",
+      "text": [
+        "这是站长的社交账号！关注站长喵，关注站长谢谢喵！"
+      ]
+    },
+    {
+      "selector": ".header-tou",
+      "text": [
+        "转起来咯！"
+      ]
+    },
+    {
+      "selector": ".zilla-likes",
+      "text": [
+        "听说点这个，站长会很开心喵~"
+      ]
+    },
+    {
+      "selector": ".cd-top",
+      "text": [
+        "拉一下这个，页面就咻的飞上去咯！",
+        "起飞咯",
+        "回到最初的起点！"
+      ]
+    },
+    {
+      "selector": ".site-title",
+      "text": [
+        "跃迁即将启动！目的地:网站扉页！",
+        "要回到首页再看看嘛！",
+        "返回首页"
+      ]
+    },
+    {
+      "selector": ".comments",
+      "text": [
+        "欢迎留言！有问必答！",
+        "善语结善缘,恶语伤人心",
+        "这是评论区,不是无人区（虽然暂时是）",
+        "有什么想和大家分享的吗",
+        "想和站长讨论些什么？",
+        "这是一个自由的社区。",
+        "申请互动！",
+        "发个友善的评论见证当下！"
+      ]
+    },
+    {
+      "selector": ".post-nepre.previous",
+      "text": [
+        "想看看上一篇文章？"
+      ]
+    },
+    {
+      "selector": ".post-nepre.next",
+      "text": [
+        "再看看下一篇文章？"
+      ]
+    },
+    {
+      "selector": ".reward-open",
+      "text": [
+        "请站长一杯果茶吧！"
+      ]
+    },
+    {
+      "selector": "#video-btn.loadvideo.videolive",
+      "text": [
+        "走过路过，不要错过！精彩演出，即将上演",
+        "旁友，这有好康的视频，看看？",
+        "来看看我的视频吧！"
+      ]
+    },
+    {
+      "selector": "#video-add",
+      "text": [
+        "诶？不想看这个？好嘛，都依你，点击换一个吧。",
+        "想换台嘛？",
+        "换个视频再看看吧！",
+        "下个视频更精彩！",
+        "随机换个新视频吧！"
+      ]
+    },
+    {
+      "selector": "#video-btn.haslive.video-play",
+      "text": [
+        "继续播放！",
+        "休息好了吗？那我继续播放咯。",
+        "再看一会吧",
+        "至少把这个视频看完嘛！",
+        "觉得视频好看嘛？别忘了来b站关注天依哦"
+      ]
+    },
+    {
+      "selector": "#hide-button",
+      "text": [
+        "完美继承站长的话痨，如果觉得烦，点一下我就先润咯~"
+      ]
+    },
+    {
+      "selector": "#sing-button",
+      "text": [
+        "想听我唱歌吗？",
+        "为了你唱下去！",
+        "准备唱歌咯！"
+      ]
+    },
+    {
+      "selector": "#catalog-button",
+      "text": [
+        "可以查看文章结构！",
+        "需要看下当前目录嘛？"
+      ]
+    },
+    {
+      "selector": "#change-button",
+      "text": [
+        "Henshin",
+        "Set!Henshin",
+        "启动超级变化形态！",
+        "盖亚！（？？？）",
+        "大声的喊出我的名字！",
+        "你的神光棒准备好了吗？",
+        "你也想化身为光吗？",
+        "到底要选哪个呢？到底要选哪个呢？到底要选哪个呢？",
+        "发生什么事了,发生什么事了,发生什么事了!",
+        "一旦接受了自己的软弱，那我就是，无敌的！",
+        "释放自我！走我的路，假面骑士贞贞贞贞德"
+      ]
+    },
+    {
+      "selector": "#pagination",
+      "text": [
+        "想看看更久远的内容？",
+        "你也想回到过去吗？",
+        "到底了~",
+        "要不再去搜索看看"
+      ]
+    },
+    {
+      "selector": "#switch-button",
+      "text": [
+        "换个衣服！",
+        "祈祷这次衣服不要重复！"
+      ]
+    },
+    {
+      "selector": ".changeSkin-gear",
+      "text": [
+        "换个背景，换个心情",
+        "可以更换背景哦"
+      ]
+    },
+    {
+      "selector": ".control-btn-serif",
+      "text": [
+        "衬线字体，也就是宋体啦！"
+      ]
+    },
+    {
+      "selector": ".control-btn-sans-serif",
+      "text": [
+        "无衬线体，也就是黑体啦！"
+      ]
+    },
+    {
+      "selector": ".aplayer-icon.aplayer-icon-menu",
+      "text": [
+        "歌单：8290035602",
+        "喜欢的话，能去网易云收藏一下歌单嘛？",
+        "现在共有311首歌，还在追加中！",
+        "欢迎大家给我推荐天依好听的歌！"
+      ]
+    },
+    {
+      "selector": ".aplayer-icon.aplayer-icon-play",
+      "text": [
+        "想听歌吗？",
+        "可以播放来自网易云音乐的歌曲！",
+        "悄悄告诉你，能听会员、付费、数专的歌哦，嘘！",
+        "喜欢的话，能去网易云收藏一下歌单嘛？",
+        "现在共有311首歌，还在追加中！",
+        "来听歌吧！"
+      ]
+    },
+    {
+      "selector": ".loadvideo.videolive",
+      "text": [
+        "想看看我的表演吗！",
+        "有天依的精彩演出和经典PV哦！",
+        "走过路过，不要错过！精彩演出，即将上演",
+        "旁友，这有好康的视频，看看？",
+        "目前有28个节目和1个隐藏节目哦!",
+        "来看看我的视频吧！"
+      ]
+    }   
+
+
   ],
   "mouse_click_msgs": [
-    { "selector": "#landlord #live2d", "text": "摸摸~(,,´•ω•)ノ(´っω•｀。)" },
-    { "selector": "#landlord #live2d", "text": "谢谢你喜欢我" },
-    { "selector": "#landlord #live2d", "text": "抱抱(づ｡◕机械的心律带动血肉的共鸣" },
-    { "selector": "#landlord #live2d", "text": "你好，我是站长" },
-    { "selector": "#landlord #live2d", "text": "我也超级喜欢你！" },
-    { "selector": "#landlord #live2d", "text": "希望你今天过得开心" },
-    { "selector": "#landlord #live2d", "text": "祝你生活愉快" },
-    { "selector": "#landlord #live2d", "text": "谢谢你访问我的网站" },
-    { "selector": "#landlord #live2d", "text": "如果有什么不开心的事，都可以和我说说" },
-    { "selector": "#landlord #live2d", "text": "万一我们不能再见，祝你早上好，中午好，晚安" },
-    { "selector": "#landlord #live2d", "text": "记得要好好吃饭，好好生活" },
-    { "selector": "#landlord #live2d", "text": "人生就像一盒巧克力，你永远不知道下一颗是什么味道" },
-    { "selector": "#landlord #live2d", "text": "有些鸟儿是关不住的，每一片羽毛都闪耀着自由的光辉" },
-    { "selector": "#landlord #live2d", "text": "昨天已是历史，明天是个谜团，只有今天是天赐的礼物" },
-    { "selector": "#landlord #live2d", "text": "折断的骨头是最好的课本" },
-    { "selector": "#landlord #live2d", "text": "要么忙于生存,要么赶着去死。" },
-    { "selector": "#landlord #live2d", "text": "希望是件美丽的东西，也许是最好的东西。美好的东西是永远不会死的。" },
-    { "selector": "#landlord #live2d", "text": "以笑的方式哭，在死亡的伴随下活着。" },
-    { "selector": "#landlord #live2d", "text": "这世界上有各种各样的人，恰巧我们成为了朋友，这不是缘分，仅仅只是我们本就应该是朋友。" },
-    { "selector": "#landlord #live2d", "text": "不管何时何地，做你想做的事永远都不晚。" },
-    { "selector": "#landlord #live2d", "text": "做出决定并不困难，困难的是接受决定。" },
-    { "selector": "#landlord #live2d", "text": "所有大人都曾是小孩，虽然只有少数人记得。" },
-    { "selector": "#landlord #live2d", "text": "我们中有的人暗淡无光，有的人鲜艳亮丽，有的光彩照人，但是偶尔，你也会遇到如同彩虹般绚丽的人，当你真遇到时，其他一切都不重要了" },
-    { "selector": "#landlord #live2d", "text": "我们都出生在阴沟里,但仍有人仰望星空" },
-    { "selector": "#video-btn.loadvideo.videolive", "text": "坐好小板凳，演出要开始咯！" },
-    { "selector": "#video-btn.loadvideo.videolive", "text": "精彩即将上演！" },
-    { "selector": "#video-btn.loadvideo.videolive", "text": "视频加载中，请耐心等待！" },
-    { "selector": "#video-btn.loadvideo.videolive", "text": "视频马上就来！" },
-    { "selector": "#video-btn.haslive.video-pause.videolive", "text": "唔。。。我好像睡着了。。。" },
-    { "selector": "#video-btn.haslive.video-pause.videolive", "text": "我回来啦！" },
-    { "selector": "#video-btn.haslive.video-pause.videolive", "text": "你的小可爱突然出现！" },
-    { "selector": "#video-btn.haslive.video-play", "text": "下半场开始！" },
-    { "selector": "#video-btn.haslive.video-play", "text": "演出继续！" },
-    { "selector": "#video-btn.haslive.video-play", "text": "这次看完嘛，让我多睡会。" }
+    {
+      "selector": "#landlord #live2d",
+      "text": [
+        "摸摸~(,,´•ω•)ノ(´っω•｀。)",
+        "谢谢你喜欢我",
+        "抱抱(づ｡◕机械的心律带动血肉的共鸣",
+        "你好，我是站长",
+        "我也超级喜欢你！",
+        "希望你今天过得开心",
+        "祝你生活愉快",
+        "谢谢你访问我的网站",
+        "如果有什么不开心的事，都可以和我说说",
+        "万一我们不能再见，祝你早上好，中午好，晚安",
+        "记得要好好吃饭，好好生活",
+        "人生就像一盒巧克力，你永远不知道下一颗是什么味道",
+        "有些鸟儿是关不住的，每一片羽毛都闪耀着自由的光辉",
+        "昨天已是历史，明天是个谜团，只有今天是天赐的礼物",
+        "折断的骨头是最好的课本",
+        "要么忙于生存,要么赶着去死。",
+        "希望是件美丽的东西，也许是最好的东西。美好的东西是永远不会死的。",
+        "以笑的方式哭，在死亡的伴随下活着。",
+        "这世界上有各种各样的人，恰巧我们成为了朋友，这不是缘分，仅仅只是我们本就应该是朋友。",
+        "不管何时何地，做你想做的事永远都不晚。",
+        "做出决定并不困难，困难的是接受决定。",
+        "所有大人都曾是小孩，虽然只有少数人记得。",
+        "我们中有的人暗淡无光，有的人鲜艳亮丽，有的光彩照人，但是偶尔，你也会遇到如同彩虹般绚丽的人，当你真遇到时，其他一切都不重要了",
+        "我们都出生在阴沟里,但仍有人仰望星空"
+      ]
+    },
+    {
+      "selector": "#video-btn.loadvideo.videolive",
+      "text": [
+        "坐好小板凳，演出要开始咯！",
+        "精彩即将上演！",
+        "视频加载中，请耐心等待！",
+        "我润啦！",
+        "那我先藏起来啦！",
+        "不打扰你看视频啦！",
+        "视频马上就来！",
+        "视频马上好！马上好！"
+      ]
+    },
+    {
+      "selector": "#video-btn.haslive.video-pause.videolive",
+      "text": [
+        "唔。。。我好像睡着了。。。",
+        "我回来啦！",
+        "你的小可爱突然出现！",
+        "看累了？休息一会吧！"
+      ]
+    },
+    {
+      "selector": "#video-btn.haslive.video-play",
+      "text": [
+        "下半场开始！",
+        "演出继续！",
+        "这次看完嘛，让我多睡会。"
+      ]
+    },
+    {
+      "selector": ".aplayer-icon-menu",
+      "text": [
+        "我又出来啦！ﾟヽ(｡◕‿◕｡)ﾉﾟ"
+      ]
+    }
   ],
+
   "mouse_copy_msgs": [
     "你都复制了些什么呀，转载要记得加上出处哦！"
   ],
@@ -216,40 +523,39 @@
   "tab_return_msgs": [
     "欢迎回来！"
   ],
-
- "songs": [
-  { "selector": "兔子先生", "text": "http://i.y.qq.com/rsc/fcgi-bin/fcg_pyq_play.fcg?songid=&songmid=003kEyJ20vINjT&songtype=1&fromtag=50&uin=1531918140&code=9D435" },
-  { "selector": "惜春去", "text": "http://i.y.qq.com/rsc/fcgi-bin/fcg_pyq_play.fcg?songid=&songmid=0015Is4c1G8MaC&songtype=1&fromtag=50&uin=1531918140&code=433F1" },
-  { "selector": "三月雨", "text": "http://i.y.qq.com/rsc/fcgi-bin/fcg_pyq_play.fcg?songid=&songmid=00272H2r2a11n2&songtype=1&fromtag=50&uin=1531918140&code=1A5E1" },
-  { "selector": "驭风少年", "text": "http://i.y.qq.com/rsc/fcgi-bin/fcg_pyq_play.fcg?songid=&songmid=002KeyKN1g5jEp&songtype=1&fromtag=50&uin=1531918140&code=4C739" },
-  { "selector": "Reeeee", "text": "http://c.y.qq.com/rsc/fcgi-bin/fcg_pyq_play.fcg?songmid=002ZiUy04C8Tlm&songtype=0&fromtag=7&code=c5006" },
-  { "selector": "海洋之心", "text": "http://c.y.qq.com/rsc/fcgi-bin/fcg_pyq_play.fcg?songmid=004YaDTS2AZxGu&songtype=0&fromtag=7&code=5ae29" },
-  { "selector": "你好，哈雷彗星", "text": "http://c.y.qq.com/rsc/fcgi-bin/fcg_pyq_play.fcg?songmid=003elDQh0zwuGV&songtype=0&fromtag=7&code=0337f" },
-  { "selector": "依存症", "text": "http://c.y.qq.com/rsc/fcgi-bin/fcg_pyq_play.fcg?songmid=002LxClo1AnjKN&songtype=0&fromtag=7&code=fa168" },
-  { "selector": "亲爱的", "text": "http://c.y.qq.com/rsc/fcgi-bin/fcg_pyq_play.fcg?songmid=002Jfiyn4QPyOT&songtype=0&fromtag=7&code=ee4f4" },
-  { "selector": "勾指起誓", "text": "http://c.y.qq.com/rsc/fcgi-bin/fcg_pyq_play.fcg?songmid=003DFkIK2D51yp&songtype=0&fromtag=7&code=0822d" },
-  { "selector": "大氿歌", "text": "http://c.y.qq.com/rsc/fcgi-bin/fcg_pyq_play.fcg?songmid=0041T9jw2BBslv&songtype=0&fromtag=7&code=ca676" },
-  { "selector": "消失在雨季", "text": "http://c.y.qq.com/rsc/fcgi-bin/fcg_pyq_play.fcg?songmid=003lj9fZ0bD2ft&songtype=0&fromtag=7&code=e8e27" },
-  { "selector": "我", "text": "http://c.y.qq.com/rsc/fcgi-bin/fcg_pyq_play.fcg?songmid=000ojHlm1DQORW&songtype=0&fromtag=7&code=b02e5" },
-  { "selector": "纪念", "text": "http://c.y.qq.com/rsc/fcgi-bin/fcg_pyq_play.fcg?songmid=002hxXc73No1bx&songtype=0&fromtag=7&code=25667" },
-  { "selector": "无敌", "text": "http://c.y.qq.com/rsc/fcgi-bin/fcg_pyq_play.fcg?songmid=002U7nN94Dr7KS&songtype=0&fromtag=7&code=0fb86" },
-  { "selector": "你看", "text": "http://c.y.qq.com/rsc/fcgi-bin/fcg_pyq_play.fcg?songmid=0024j9DG3bGC6z&songtype=0&fromtag=7&code=b030d" },
-  { "selector": "不停歇的旅途", "text": "http://c.y.qq.com/rsc/fcgi-bin/fcg_pyq_play.fcg?songmid=000MoDck35TqY4&songtype=0&fromtag=7&code=cdbfa" },
-  { "selector": "为了你唱下去", "text": "http://c.y.qq.com/rsc/fcgi-bin/fcg_pyq_play.fcg?songmid=002JvGsZ2Mn5D6&songtype=0&fromtag=7&code=7bd6e" },
-  { "selector": "夢想→World→歌唱", "text": "http://c.y.qq.com/rsc/fcgi-bin/fcg_pyq_play.fcg?songmid=003CuVfc0lH1Vi&songtype=0&fromtag=7&code=11a28" },
-  { "selector": "亚得里亚海的黎明", "text": "http://c.y.qq.com/rsc/fcgi-bin/fcg_pyq_play.fcg?songmid=003yyfig3gaNfJ&songtype=0&fromtag=7&code=34b90" },
-  { "selector": "Seattle物语Ⅱ", "text": "http://c.y.qq.com/rsc/fcgi-bin/fcg_pyq_play.fcg?songmid=00299hOu3zuvy5&songtype=0&fromtag=7&code=bea04" },
-  { "selector": "心跳同步的时光", "text": "http://c.y.qq.com/rsc/fcgi-bin/fcg_pyq_play.fcg?songmid=002u9Ghg1Tu1Yy&songtype=0&fromtag=7&code=5e3c5" },
-  { "selector": "世末歌者乐正绫", "text": "http://c.y.qq.com/rsc/fcgi-bin/fcg_pyq_play.fcg?songmid=001Cbsxe1KPijo&songtype=0&fromtag=7&code=cb354" },
-  { "selector": "hello&bye，days", "text": "http://c.y.qq.com/rsc/fcgi-bin/fcg_pyq_play.fcg?songmid=002BMPxC0ndqNv&songtype=0&fromtag=7&code=46e57" },
-  { "selector": "月白色倒影的少女", "text": "http://c.y.qq.com/rsc/fcgi-bin/fcg_pyq_play.fcg?songmid=0045JTBv2uhobs&songtype=0&fromtag=7&code=3304a" },
-  { "selector": "雨后的世界", "text": "http://c.y.qq.com/rsc/fcgi-bin/fcg_pyq_play.fcg?songmid=001ubG1u16S7xC&songtype=0&fromtag=7&code=e8647" },
-  { "selector": "纯蓝", "text": "http://c.y.qq.com/rsc/fcgi-bin/fcg_pyq_play.fcg?songmid=0032PlQp1fOG83&songtype=0&fromtag=7&code=90b2f" },
-  { "selector": "Step on your heart(Album ver)", "text": "http://c.y.qq.com/rsc/fcgi-bin/fcg_pyq_play.fcg?songmid=00273AT80FGHMV&songtype=0&fromtag=7&code=41056" },
-  { "selector": "万分之一的光（live）", "text": "http://c.y.qq.com/rsc/fcgi-bin/fcg_pyq_play.fcg?songmid=0003TOXq2OqnGE&songtype=0&fromtag=7&code=44f4a" },
-  { "selector": "カナタハルカ", "text": "http://c.y.qq.com/rsc/fcgi-bin/fcg_pyq_play.fcg?songmid=003ODX5I3SS2oJ&songtype=0&fromtag=7&code=43806" },
-  { "selector": "4:55&", "text": "http://c.y.qq.com/rsc/fcgi-bin/fcg_pyq_play.fcg?songmid=001ukyy43ymAgB&songtype=0&fromtag=7&code=59fd8" },
-  { "selector": "アドベンチャー", "text": "http://c.y.qq.com/rsc/fcgi-bin/fcg_pyq_play.fcg?songmid=001qEXoq1mDxgU&songtype=0&fromtag=7&code=1d0bd" }
-]
-
+  "songs": [
+    { "selector": "兔子先生", "text": ["http://i.y.qq.com/rsc/fcgi-bin/fcg_pyq_play.fcg?songid=&songmid=003kEyJ20vINjT&songtype=1&fromtag=50&uin=1531918140&code=9D435"] },
+    { "selector": "惜春去", "text": ["http://i.y.qq.com/rsc/fcgi-bin/fcg_pyq_play.fcg?songid=&songmid=0015Is4c1G8MaC&songtype=1&fromtag=50&uin=1531918140&code=433F1"] },
+    { "selector": "三月雨", "text": ["http://i.y.qq.com/rsc/fcgi-bin/fcg_pyq_play.fcg?songid=&songmid=00272H2r2a11n2&songtype=1&fromtag=50&uin=1531918140&code=1A5E1"] },
+    { "selector": "驭风少年", "text": ["http://i.y.qq.com/rsc/fcgi-bin/fcg_pyq_play.fcg?songid=&songmid=002KeyKN1g5jEp&songtype=1&fromtag=50&uin=1531918140&code=4C739"] },
+    { "selector": "Reeeee", "text": ["http://c.y.qq.com/rsc/fcgi-bin/fcg_pyq_play.fcg?songmid=002ZiUy04C8Tlm&songtype=0&fromtag=7&code=c5006"] },
+    { "selector": "海洋之心", "text": ["http://c.y.qq.com/rsc/fcgi-bin/fcg_pyq_play.fcg?songmid=004YaDTS2AZxGu&songtype=0&fromtag=7&code=5ae29"] },
+    { "selector": "你好，哈雷彗星", "text": ["http://c.y.qq.com/rsc/fcgi-bin/fcg_pyq_play.fcg?songmid=003elDQh0zwuGV&songtype=0&fromtag=7&code=0337f"] },
+    { "selector": "依存症", "text": ["http://c.y.qq.com/rsc/fcgi-bin/fcg_pyq_play.fcg?songmid=002LxClo1AnjKN&songtype=0&fromtag=7&code=fa168"] },
+    { "selector": "亲爱的", "text": ["http://c.y.qq.com/rsc/fcgi-bin/fcg_pyq_play.fcg?songmid=002Jfiyn4QPyOT&songtype=0&fromtag=7&code=ee4f4"] },
+    { "selector": "勾指起誓", "text": ["http://c.y.qq.com/rsc/fcgi-bin/fcg_pyq_play.fcg?songmid=003DFkIK2D51yp&songtype=0&fromtag=7&code=0822d"] },
+    { "selector": "大氿歌", "text": ["http://c.y.qq.com/rsc/fcgi-bin/fcg_pyq_play.fcg?songmid=0041T9jw2BBslv&songtype=0&fromtag=7&code=ca676"] },
+    { "selector": "消失在雨季", "text": ["http://c.y.qq.com/rsc/fcgi-bin/fcg_pyq_play.fcg?songmid=003lj9fZ0bD2ft&songtype=0&fromtag=7&code=e8e27"] },
+    { "selector": "我", "text": ["http://c.y.qq.com/rsc/fcgi-bin/fcg_pyq_play.fcg?songmid=000ojHlm1DQORW&songtype=0&fromtag=7&code=b02e5"] },
+    { "selector": "纪念", "text": ["http://c.y.qq.com/rsc/fcgi-bin/fcg_pyq_play.fcg?songmid=002hxXc73No1bx&songtype=0&fromtag=7&code=25667"] },
+    { "selector": "无敌", "text": ["http://c.y.qq.com/rsc/fcgi-bin/fcg_pyq_play.fcg?songmid=002U7nN94Dr7KS&songtype=0&fromtag=7&code=0fb86"] },
+    { "selector": "你看", "text": ["http://c.y.qq.com/rsc/fcgi-bin/fcg_pyq_play.fcg?songmid=0024j9DG3bGC6z&songtype=0&fromtag=7&code=b030d"] },
+    { "selector": "不停歇的旅途", "text": ["http://c.y.qq.com/rsc/fcgi-bin/fcg_pyq_play.fcg?songmid=000MoDck35TqY4&songtype=0&fromtag=7&code=cdbfa"] },
+    { "selector": "为了你唱下去", "text": ["http://c.y.qq.com/rsc/fcgi-bin/fcg_pyq_play.fcg?songmid=002JvGsZ2Mn5D6&songtype=0&fromtag=7&code=7bd6e"] },
+    { "selector": "夢想→World→歌唱", "text": ["http://c.y.qq.com/rsc/fcgi-bin/fcg_pyq_play.fcg?songmid=003CuVfc0lH1Vi&songtype=0&fromtag=7&code=11a28"] },
+    { "selector": "亚得里亚海的黎明", "text": ["http://c.y.qq.com/rsc/fcgi-bin/fcg_pyq_play.fcg?songmid=003yyfig3gaNfJ&songtype=0&fromtag=7&code=34b90"] },
+    { "selector": "Seattle物语Ⅱ", "text": ["http://c.y.qq.com/rsc/fcgi-bin/fcg_pyq_play.fcg?songmid=00299hOu3zuvy5&songtype=0&fromtag=7&code=bea04"] },
+    { "selector": "心跳同步的时光", "text": ["http://c.y.qq.com/rsc/fcgi-bin/fcg_pyq_play.fcg?songmid=002u9Ghg1Tu1Yy&songtype=0&fromtag=7&code=5e3c5"] },
+    { "selector": "世末歌者乐正绫", "text": ["http://c.y.qq.com/rsc/fcgi-bin/fcg_pyq_play.fcg?songmid=001Cbsxe1KPijo&songtype=0&fromtag=7&code=cb354"] },
+    { "selector": "hello&bye，days", "text": ["http://c.y.qq.com/rsc/fcgi-bin/fcg_pyq_play.fcg?songmid=002BMPxC0ndqNv&songtype=0&fromtag=7&code=46e57"] },
+    { "selector": "月白色倒影的少女", "text": ["http://c.y.qq.com/rsc/fcgi-bin/fcg_pyq_play.fcg?songmid=0045JTBv2uhobs&songtype=0&fromtag=7&code=3304a"] },
+    { "selector": "雨后的世界", "text": ["http://c.y.qq.com/rsc/fcgi-bin/fcg_pyq_play.fcg?songmid=001ubG1u16S7xC&songtype=0&fromtag=7&code=e8647"] },
+    { "selector": "纯蓝", "text": ["http://c.y.qq.com/rsc/fcgi-bin/fcg_pyq_play.fcg?songmid=0032PlQp1fOG83&songtype=0&fromtag=7&code=90b2f"] },
+    { "selector": "Step on your heart(Album ver)", "text": ["http://c.y.qq.com/rsc/fcgi-bin/fcg_pyq_play.fcg?songmid=00273AT80FGHMV&songtype=0&fromtag=7&code=41056"] },
+    { "selector": "万分之一的光（live）", "text": ["http://c.y.qq.com/rsc/fcgi-bin/fcg_pyq_play.fcg?songmid=0003TOXq2OqnGE&songtype=0&fromtag=7&code=44f4a"] },
+    { "selector": "カナタハルカ", "text": ["http://c.y.qq.com/rsc/fcgi-bin/fcg_pyq_play.fcg?songmid=003ODX5I3SS2oJ&songtype=0&fromtag=7&code=43806"] },
+    { "selector": "4:55&", "text": ["http://c.y.qq.com/rsc/fcgi-bin/fcg_pyq_play.fcg?songmid=001ukyy43ymAgB&songtype=0&fromtag=7&code=59fd8"] },
+    { "selector": "アドベンチャー", "text": ["http://c.y.qq.com/rsc/fcgi-bin/fcg_pyq_play.fcg?songmid=001qEXoq1mDxgU&songtype=0&fromtag=7&code=1d0bd"] }
+  ]
 }
+

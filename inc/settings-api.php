@@ -113,11 +113,11 @@ class PoiLive2D_Settings {
             'fghrsh'      => 'fghrsh一言(fghrsh.net)', 
             'local'       => '本地一言'
         ]);
+        //1.5 API 选择后续设置（依赖关系）
         $this->add_field('poilive2d-hitokoto', 'section_hitokoto_main', 'hitokoto_jinrishici_sdk', '今日诗词推荐模式', 'radio_callback', [
             '0' => '关闭个性化推荐（使用老 API，更随机）', 
             '1' => '开启个性化推荐（使用SDK，根据地域天气推荐）'
-        ], $jinrishici_sdk_class);        
-
+        ], $jinrishici_sdk_class);   
         $this->add_field('poilive2d-hitokoto', 'section_hitokoto_main', 'hitokoto_local_msgs', '本地一言列表', 'textarea_array_callback', null, $local_msgs_class);
 
         $this->add_field('poilive2d-hitokoto', 'section_hitokoto_main', 'hitokoto_origin', '一言与来源排列方式', 'radio_callback', [
@@ -153,9 +153,10 @@ class PoiLive2D_Settings {
          * TAB 4: 交互设置 (poilive2d-interactive)
          * ========================================================================== */
 
-        add_settings_section('section_interactive_mouse', '鼠标交互设置：', null, 'poilive2d-interactive');
+        add_settings_section('section_interactive_mouse', '鼠标交互设置：', null, 'poilive2d-interactive');        
         $this->add_field('poilive2d-interactive', 'section_interactive_mouse', 'mouse_hover', '自定义鼠标悬停提示', 'grouped_textarea_callback');
         $this->add_field('poilive2d-interactive', 'section_interactive_mouse', 'mouse_click_msgs', '自定义鼠标点击提示', 'grouped_textarea_callback');
+
         add_settings_section('section_interactive_other', '其他交互设置：', null, 'poilive2d-interactive');
         $this->add_field('poilive2d-interactive', 'section_interactive_other', 'mouse_copy_msgs', '复制信息时的提示', 'repeater_single_callback');
         $this->add_field('poilive2d-interactive', 'section_interactive_other', 'mouse_hide_msgs', '隐藏角色的提示', 'repeater_single_callback');
@@ -288,9 +289,15 @@ public function number_callback($params) {
     $id = $params['id'];
     $raw_items = $this->get_val($id, array());
     $grouped = array();
+
     if (is_array($raw_items)) {
         foreach ($raw_items as $item) {
-            if (isset($item['selector'])) $grouped[$item['selector']][] = $item['text'];
+            
+            if (isset($item['selector']) && !empty($item['text']) && is_array($item['text'])) {
+                foreach ($item['text'] as $t) {
+                    $grouped[$item['selector']][] = $t;
+                }
+            }
         }
     }
     if (empty($grouped)) $grouped[''] = array('');
@@ -334,11 +341,24 @@ public function number_callback($params) {
     // --- 模式二：多行文本框模式 (防闪烁自适应高度版) ---
     public function grouped_textarea_callback($params) {
         $id = $params['id'];
+        
+        // 1. 解析备注参数 (兼容字符串或数组格式)
+        $desc = '';
+        if (isset($params['args'])) {
+            $desc = is_array($params['args']) ? (isset($params['args']['desc']) ? $params['args']['desc'] : '') : $params['args'];
+        }
+
         $raw_items = $this->get_val($id, array());
         $grouped = array();
+        
+        // (继承上一步的纯净数组遍历逻辑)
         if (is_array($raw_items)) {
             foreach ($raw_items as $item) {
-                if (isset($item['selector'])) $grouped[$item['selector']][] = $item['text'];
+                if (isset($item['selector']) && !empty($item['text']) && is_array($item['text'])) {
+                    foreach ($item['text'] as $t) {
+                        $grouped[$item['selector']][] = $t;
+                    }
+                }
             }
         }
         if (empty($grouped)) $grouped[''] = array('');
@@ -347,32 +367,37 @@ public function number_callback($params) {
         foreach ($grouped as $selector => $texts) {
             $textarea_content = implode("\n", $texts);
 
-            // 【终极高度计算：加入自动折行补偿】
             $line_count = 0;
             foreach ($texts as $line) {
-                // 中文字符较宽，在 600px 的框里，大约 40-45 个中文字符会折行一次
-                // 这里我们设定 82 为一个基准阈值 (如果里面有大量英文会有点误差，但用来算初始高度足够了)
                 $len = mb_strlen($line, 'UTF-8');
                 if ($len > 82) {
-                    $line_count += ceil($len / 82); // 超长行折算为多行
+                    $line_count += ceil($len / 82); 
                 } else {
                     $line_count += 1;
                 }
             }
             if ($line_count == 0) $line_count = 1;
 
-            // 每一行约 21px，上下 padding 约 8px
-            $pre_height = max(30, $line_count * 21 + 8);
+            // 2. 高度补偿：行高24px + 上下padding共16px = 单行40px
+            $pre_height = max(40, $line_count * 24 + 16);
 
             echo '<div class="selector-group-box" style="display: flex; margin-bottom: 10px; align-items: flex-start; gap: 10px;">';
-            echo '<input type="text" class="regular-text group-selector-input" style="width: 200px; font-weight: bold; margin: 0; height: 30px;" value="'.esc_attr($selector).'" placeholder="选择器">';
-            echo '<span style="font-weight: bold; margin-top: 5px;">:</span>';
-            echo '<div style="flex: 1;">';
-            echo '<textarea class="large-text group-text-area auto-expand-textarea" rows="1" style="width: 600px; line-height: 1.5; padding: 3px 8px; min-height: 30px; height: '.$pre_height.'px; margin: 0; resize: vertical; overflow: hidden;" placeholder="一行一条回复...">'.esc_textarea($textarea_content).'</textarea>';
+            // 左侧输入框：增加 box-sizing 锁定 40px 物理高度
+            echo '<input type="text" class="regular-text group-selector-input" style="box-sizing: border-box; width: 200px; font-weight: bold; margin: 0; height: 40px; line-height: 24px;" value="'.esc_attr($selector).'" placeholder="选择器">';
+            echo '<span style="font-weight: bold; margin-top: 10px;">:</span>';
+
+            echo '<div style="flex: 1;">';            
+            // 右侧文本框：修改 padding 为 7px 8px，增加 box-sizing
+            echo '<textarea class="large-text group-text-area auto-expand-textarea" rows="1" style="box-sizing: border-box; width: 600px; line-height: 24px; padding: 7px 8px; min-height: 40px; height: '.$pre_height.'px; margin: 0; resize: vertical; overflow: hidden;" placeholder="一行一条回复...">'.esc_textarea($textarea_content).'</textarea>';
             echo '</div></div>';
         }
         echo '</div>';
         echo '<p><button type="button" class="button button-primary add-new-group" data-target="'.$id.'_container">+ 增加新选择器组</button></p>';
+
+        // 3. 输出备注文案
+        if (!empty($desc)) {
+            echo '<p class="description">'.$desc.'</p>';
+        }
     }
 
     // --- 模式三：单列重复模式 (同步更新) ---
@@ -391,26 +416,24 @@ public function number_callback($params) {
         echo '</div>';
     }
 
-
-    // --- 模式四：纯净多行数组模式  ---
     // --- 模式四：纯净多行数组模式 (防闪烁自适应高度版 - 包含超长折行计算) ---
     public function textarea_array_callback($params) {
         $id = $params['id'];
-        $desc = isset($params['args']) ? $params['args'] : '';
+        
+        // 1. 解析备注参数 (兼容字符串或数组格式)
+        $desc = '';
+        if (isset($params['args'])) {
+            $desc = is_array($params['args']) ? (isset($params['args']['desc']) ? $params['args']['desc'] : '') : $params['args'];
+        }
         
         $val = $this->get_val($id, array());
         if (!is_array($val)) $val = array();
         
         $content = implode("\n", $val);
 
-        // 【终极高度计算：加入自动折行补偿】
         $line_count = 0;
         foreach ($val as $line) {
-            // mb_strwidth 自动算视觉宽度
             $width = mb_strwidth($line, 'UTF-8');
-            
-            // 本地一言文本框 width: 800px，实测大约可容纳 105-110 个单位。
-            // 这里取 100 作为安全阈值，超过就折算为多行
             if ($width > 112) {
                 $line_count += ceil($width / 112); 
             } else {
@@ -419,13 +442,14 @@ public function number_callback($params) {
         }
         if ($line_count == 0) $line_count = 1;
 
-        // 【高度补偿计算】：1.5行高为21px，上下padding大约12px
-        $pre_height = max(30, $line_count * 21 + 12);
+        // 2. 高度补偿：行高24px + 上下padding共16px = 单行40px
+        $pre_height = max(40, $line_count * 24 + 16);
 
-        // 输出框体，直接写入算好的精准 height
-        echo '<textarea name="poilive2d_options['.$id.']" id="'.$id.'" class="large-text auto-expand-textarea json-array-textarea" style="width: 800px; line-height: 1.5; padding: 5px 6px; min-height: 30px; height: '.$pre_height.'px; resize: vertical; overflow: hidden;" placeholder="请输入本地一言，一行一条...">'.esc_textarea($content).'</textarea>';
-        
-        if ($desc) {
+        // 3. 输出框体，匹配 40px 的视觉基准
+// 输出框体：修改 padding 为 7px 8px，增加 box-sizing
+        echo '<textarea name="poilive2d_options['.$id.']" id="'.$id.'" class="large-text auto-expand-textarea json-array-textarea" style="box-sizing: border-box; width: 800px; line-height: 24px; padding: 7px 8px; min-height: 40px; height: '.$pre_height.'px; resize: vertical; overflow: hidden;" placeholder="请输入本地一言，一行一条...">'.esc_textarea($content).'</textarea>';        
+        // 4. 输出说明文案
+        if (!empty($desc)) {
             echo '<p class="description">'.$desc.'</p>';
         }
     }
