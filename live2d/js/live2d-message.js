@@ -111,6 +111,66 @@ bindInteractEvents(poilive2d_config.mouse_hover, 'mouseenter');
 // 绑定点击事件
 bindInteractEvents(poilive2d_config.mouse_click_msgs, 'click');
 
+// ==========================================
+// 4.5 动态条件交互事件绑定 (高级逻辑引擎)
+// ==========================================
+function bindConditionInteractEvents(eventData, eventType) {
+    if (!eventData) return;
+
+    if (typeof eventData === 'string') {
+        try { eventData = JSON.parse(eventData); }
+        catch (e) { console.warn("Live2D: 条件交互数据解析失败", e); return; }
+    }
+
+    // eventData 是咱们从后台拿到的一组对象数组: [{selector, condition, text_true, text_false}]
+    if (Array.isArray(eventData)) {
+        $.each(eventData, function (index, item) {
+            var selector = item.selector ? item.selector.trim() : '';
+            if (!selector) return; // 没写选择器直接跳过防报错
+
+            var conditionStr = item.condition ? item.condition.trim() : '';
+
+            // 兼容处理：把字符串按换行切成数组，如果本身就是数组则不用管
+            var trueMsgs = Array.isArray(item.text_true) ? item.text_true : (typeof item.text_true === 'string' ? item.text_true.split('\n') : []);
+            var falseMsgs = Array.isArray(item.text_false) ? item.text_false : (typeof item.text_false === 'string' ? item.text_false.split('\n') : []);
+
+            // 绑定 jQuery 动态事件监听
+            $(document).on(eventType, selector, function () {
+                try {
+                    var isTrue = true; // 默认如果没写条件，就当做满足条件（执行绿框）
+
+                    if (conditionStr) {
+                        // 【黑科技核心】：利用 .call(this) 注入当前触发元素的上下文！
+                        // 这样在后台填写条件时，甚至可以使用 $(this).hasClass('xxx') 来精准判断当前悬浮的这个元素！
+                        isTrue = new Function("return " + conditionStr).call(this);
+                    }
+
+                    // 根据条件结果，决定抽取绿框(true)还是红框(false)里的台词
+                    var msgsToUse = isTrue ? trueMsgs : falseMsgs;
+
+                    // 清洗数据，防止用户敲了多余的回车空行
+                    var finalMsgs = msgsToUse.filter(function (m) {
+                        return typeof m === 'string' && m.trim() !== '';
+                    });
+
+                    // 最终如果有词，就发射气泡 (showMessage 自带随机抽取功能)
+                    if (finalMsgs.length > 0) {
+                        showMessage(finalMsgs, 3000);
+                    }
+                } catch (e) {
+                    console.warn("Live2D: 动态条件执行错误，请检查后台语法 ->", conditionStr, e);
+                }
+            });
+        });
+    }
+}
+
+// 激活悬浮判断！(对应你 JSON 里的 mouse_condition_hover)
+bindConditionInteractEvents(poilive2d_config.mouse_condition_hover, 'mouseenter');
+
+// 如果你后台也加了鼠标点击的动态条件，也可以直接用这行激活：
+bindConditionInteractEvents(poilive2d_config.mouse_condition_click_msgs, 'mousedown');
+
 // 5. 进站与切后台欢迎语 (全面对接后台高级设置)
 (function () {
     $('#landlord').bind("contextmenu", function () { return false; });

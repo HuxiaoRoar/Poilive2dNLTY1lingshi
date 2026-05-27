@@ -21,7 +21,7 @@ class PoiLive2D_Settings {
         } else {
             $this->defaults = array();
         }
-        add_action('admin_head', array($this, 'inject_admin_styles')); // 注入自定义 CSS
+        
     }
     public function page_init() {
 
@@ -151,18 +151,23 @@ class PoiLive2D_Settings {
 
         /* ==========================================================================
          * TAB 4: 交互设置 (poilive2d-interactive)
-         * ========================================================================== */
+         * ========================================================================== */       
+        
+        add_settings_section('section_interactive_condition', '高级鼠标交互设置：', null, 'poilive2d-interactive');        
+        $this->add_field('poilive2d-interactive', 'section_interactive_condition', 'mouse_condition_hover', '条件判断交互-悬停', 'condition_interaction_callback', '无需判断的直接留空条件框即可。');
+        $this->add_field('poilive2d-interactive', 'section_interactive_condition', 'mouse_condition_click_msgs', '条件判断交互-点击', 'condition_interaction_callback', '无需判断的直接留空条件框即可。');
 
-        add_settings_section('section_interactive_mouse', '鼠标交互设置：', null, 'poilive2d-interactive');        
-        $this->add_field('poilive2d-interactive', 'section_interactive_mouse', 'mouse_hover', '自定义鼠标悬停提示', 'grouped_textarea_callback');
-        $this->add_field('poilive2d-interactive', 'section_interactive_mouse', 'mouse_click_msgs', '自定义鼠标点击提示', 'grouped_textarea_callback');
 
-        add_settings_section('section_interactive_other', '其他交互设置：', null, 'poilive2d-interactive');
+add_settings_section('section_interactive_other', '进出交互设置：', null, 'poilive2d-interactive');
         $this->add_field('poilive2d-interactive', 'section_interactive_other', 'mouse_copy_msgs', '复制信息时的提示', 'repeater_single_callback');
         $this->add_field('poilive2d-interactive', 'section_interactive_other', 'mouse_hide_msgs', '隐藏角色的提示', 'repeater_single_callback');
         $this->add_field('poilive2d-interactive', 'section_interactive_other', 'mouse_show_msgs', '显示角色提示', 'repeater_single_callback');
         $this->add_field('poilive2d-interactive', 'section_interactive_other', 'tab_leave_msgs', '切出页面提示', 'repeater_single_callback');
         $this->add_field('poilive2d-interactive', 'section_interactive_other', 'tab_return_msgs', '切回页面提示', 'repeater_single_callback');
+
+        add_settings_section('section_interactive_mouse', '常规鼠标交互设置：', null, 'poilive2d-interactive');        
+        $this->add_field('poilive2d-interactive', 'section_interactive_mouse', 'mouse_hover', '鼠标悬停提示', 'grouped_textarea_callback');
+        $this->add_field('poilive2d-interactive', 'section_interactive_mouse', 'mouse_click_msgs', '鼠标点击提示', 'grouped_textarea_callback');
 
         /* ==========================================================================
          * TAB 5: 高级设置 (poilive2d-advanced)
@@ -454,6 +459,91 @@ public function number_callback($params) {
         }
     }
 
+    // --- 模式五：动态条件交互模式 (对齐原生排版，带真假颜色描边) ---
+    public function condition_interaction_callback($params) {
+        $id = $params['id'];
+        
+        // 解析备注参数
+        $desc = '';
+        if (isset($params['args'])) {
+            $desc = is_array($params['args']) ? (isset($params['args']['desc']) ? $params['args']['desc'] : '') : $params['args'];
+        }
+
+        $raw_items = $this->get_val($id, array());
+        $items = array();
+        
+        // 数据清洗：格式化成标准二维数组
+        if (is_array($raw_items)) {
+            foreach ($raw_items as $item) {
+                if (!empty($item['selector'])) {
+                    $items[] = array(
+                        'selector'   => $item['selector'],
+                        'condition'  => isset($item['condition']) ? $item['condition'] : '',
+                        'text_true'  => (isset($item['text_true']) && is_array($item['text_true'])) ? $item['text_true'] : array(),
+                        'text_false' => (isset($item['text_false']) && is_array($item['text_false'])) ? $item['text_false'] : array(),
+                    );
+                }
+            }
+        }
+        if (empty($items)) {
+            $items[] = array('selector' => '', 'condition' => '', 'text_true' => array(''), 'text_false' => array(''));
+        }
+
+        echo '<div class="condition-interaction-container" id="'.$id.'_container">';
+        foreach ($items as $item) {
+            $true_content = implode("\n", $item['text_true']);
+            $false_content = implode("\n", $item['text_false']);
+
+            // 高度防闪烁计算：[真] 文本框 (完全对标 grouped_textarea_callback 的算法)
+            $line_count_t = 0;
+            foreach ($item['text_true'] as $line) {
+                $len_t = mb_strlen($line, 'UTF-8');
+                $line_count_t += ($len_t > 82) ? ceil($len_t / 82) : 1;
+            }
+            if ($line_count_t == 0) $line_count_t = 1;
+            $pre_height_t = max(40, $line_count_t * 24 + 16);
+
+            // 高度防闪烁计算：[假] 文本框
+            $line_count_f = 0;
+            foreach ($item['text_false'] as $line) {
+                $len_f = mb_strlen($line, 'UTF-8');
+                $line_count_f += ($len_f > 82) ? ceil($len_f / 82) : 1;
+            }
+            if ($line_count_f == 0) $line_count_f = 1;
+            $pre_height_f = max(40, $line_count_f * 24 + 16);
+
+            // 最外层容器：干掉白色背景和描边，使用 flex 横向排布，间距 10px 完美对齐上方 UI
+            echo '<div class="selector-group-box" style="display: flex; margin-bottom: 10px; align-items: flex-start; gap: 10px;">';
+
+            // 1. 左侧：触发元素选择器 (强制 200px 宽，40px 高)
+            echo '<input type="text" class="regular-text group-selector-input" style="box-sizing: border-box; width: 200px; font-weight: bold; margin: 0; height: 40px; line-height: 24px;" value="'.esc_attr($item['selector']).'" placeholder="触发元素 (如: .aplayer-pic)">';
+            
+            // 2. 中间：冒号
+            echo '<span style="font-weight: bold; margin-top: 10px;">:</span>';
+
+            // 3. 右侧容器：里面装着【判定条件】和【真假文本框】
+            echo '<div style="flex: 1; display: flex; flex-direction: column; gap: 10px;">';
+            
+            // 右侧第一行：判定条件 (强制 200px 宽，和左边对称，40px 高)
+            echo '<input type="text" class="regular-text group-condition-input" style="box-sizing: border-box; width: 600px; font-family: monospace; margin: 0; height: 40px; line-height: 24px; background-color: #ffffff;" value="'.esc_attr($item['condition']).'" placeholder="判定条件 (如: length > 0)">';
+            
+            // 右侧第二行：满足条件时触发 (绿框，600px 宽)
+            echo '<textarea class="large-text group-text-true auto-expand-textarea" rows="1" style="box-sizing: border-box; width: 600px; line-height: 24px; padding: 7px 8px; min-height: 40px; height: '.$pre_height_t.'px; margin: 0; resize: vertical; overflow: hidden; border: 1px solid #46b450; border-left: 4px solid #46b450;" placeholder="[满足条件时触发] 一行一条... 留空不触发">'.esc_textarea($true_content).'</textarea>';
+            
+            // 右侧第三行：不满足条件时触发 (红框，600px 宽)
+            echo '<textarea class="large-text group-text-false auto-expand-textarea" rows="1" style="box-sizing: border-box; width: 600px; line-height: 24px; padding: 7px 8px; min-height: 40px; height: '.$pre_height_f.'px; margin: 0; resize: vertical; overflow: hidden; border: 1px solid #dc3232; border-left: 4px solid #dc3232;" placeholder="[不满足条件时触发] 一行一条... 留空不触发">'.esc_textarea($false_content).'</textarea>';
+            
+            echo '</div>'; // 右侧容器结束
+            echo '</div>'; // 单组最外层结束
+        }
+        echo '</div>';
+        echo '<p><button type="button" class="button button-primary add-new-group" data-target="'.$id.'_container">+ 增加新条件判定组</button></p>';
+        
+        if (!empty($desc)) {
+            echo '<p class="description">'.$desc.'</p>';
+        }
+    }
+
     // --- 增强版：固定提示列表回调 ---
     public function fixed_tips_callback($params) {
         $id = $params['id'];
@@ -475,49 +565,7 @@ public function number_callback($params) {
         }
         echo '</fieldset>';
     }
-
-
-    // 在页面底部注入一段 CSS 解决你看到的按钮大小不一致问题
-    public function inject_admin_styles() {
-        echo '<style>
-            .remove-row-styled, .add-text-row-styled, .add-single-row-styled {
-                width: 40px !important;
-                height: 40px !important;
-                padding: 0 !important;
-                line-height: 28px !important;
-                text-align: center !important;
-                font-weight: bold !important;
-                display: inline-flex !important;
-                align-items: center !important;
-                justify-content: center !important;
-            }
-            .hidden-settings-row { display: none !important; }
-            .add-text-row-styled, .add-single-row-styled { color: #2271b1 !important; }
-            .remove-row-styled { color: #b32d2e !important; }
-
-            /* 1. 给所有标签强制统一尺寸和底边距，彻底消灭切换时的物理形变 */
-            .nav-tab-wrapper .poilive2d-tab-link {
-                box-sizing: border-box !important;
-radio_callback                border-bottom: 1px solid transparent !important; /* 未激活时用透明边框占位，保持高度不变 */
-                transition: none !important; /* 杀掉可能存在的 WordPress 原生过度动画 */
-            }
-
-            /* 2. 激活状态下，仅仅改变底部边框的颜色，绝不改变尺寸 */
-            .nav-tab-wrapper .poilive2d-tab-link.nav-tab-active {
-                border-bottom: 1px solid #f0f0f1 !important; /* 配合 WordPress 默认后台的背景色 */
-            }
-
-            /* 3. 给最外圈的包裹器一个固定的底边距，防止与表单发生折叠突变 */
-            h2.nav-tab-wrapper, 
-            .wrap h2.nav-tab-wrapper {
-                margin-bottom: 15px !important; 
-                padding-bottom: 0 !important;
-            }         
-            
-        </style>';
-        
-    }
-    
+ 
     
     private function get_val($id, $hard_default = '') {
         // 先获取数据库中已保存的选项

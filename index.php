@@ -14,8 +14,8 @@ define('LIVE2D_VERSION', '1.7.12');
 define('LIVE2D_URL', plugins_url('', __FILE__));
 define('LIVE2D_PATH', dirname(__FILE__));
 
-if (file_exists(LIVE2D_PATH . '/inc/settings-api.php')) {
-    require_once LIVE2D_PATH . '/inc/settings-api.php';
+if (file_exists(LIVE2D_PATH . '/option/settings-api.php')) {
+    require_once LIVE2D_PATH . '/option/settings-api.php';
 }
 
 /*register_activation_hook(__FILE__, 'poilive2d_plugin_activate');*/
@@ -69,6 +69,7 @@ function poilive2d_admin_scripts($hook_suffix) {
     if (strpos($hook_suffix, 'poilive2d') === false) {
         return;
     }
+    wp_enqueue_style('poilive2d-admin-css', plugin_dir_url(__FILE__) . 'option/admin-style.css', array(), '1.0');
 
     // 1. 加载 WordPress 核心 CodeMirror 资源
     $settings = wp_enqueue_code_editor( array( 'type' => 'application/json' ) );
@@ -79,7 +80,7 @@ function poilive2d_admin_scripts($hook_suffix) {
 
     wp_enqueue_script(
         'wp-color-picker-alpha',
-        plugins_url('live2d/js/wp-color-picker-alpha.min.js', __FILE__),
+        plugins_url('option/wp-color-picker-alpha.min.js', __FILE__),
         array('wp-color-picker'),
         '3.0.0',
         true
@@ -88,13 +89,13 @@ function poilive2d_admin_scripts($hook_suffix) {
     // 3. 【关键：先排队主脚本】
     wp_enqueue_script(
         'poilive2d-admin-js', 
-        plugins_url('live2d/js/admin-scripts.js', __FILE__), 
+        plugins_url('option/admin-scripts.js', __FILE__), 
         array('jquery', 'wp-color-picker-alpha'), 
         time(), // 使用时间戳防止缓存
         true
     );
 
-    $default_file = LIVE2D_PATH . '/inc/defaults.json';
+    $default_file = LIVE2D_PATH . '/option/defaults.json';
     $defaults_data = file_exists($default_file) ? json_decode(file_get_contents($default_file), true) : array();
 
     // 4. 关键：注入两个变量（编辑器配置 + 默认数据）
@@ -104,6 +105,7 @@ function poilive2d_admin_scripts($hook_suffix) {
         'var poilive2d_defaults = ' . wp_json_encode( $defaults_data ) . ';', // 增加这行！
         'after'
     );
+
 }
 
 

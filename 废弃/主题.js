@@ -1106,7 +1106,8 @@ if (mashiro_option.float_player_on) {
                     } catch (a) {
                         console.log(a)
                     }
-                    //live2d交互 
+                    //live2d交互
+                    //悬浮 判断 解决
                     $(".aplayer-icon-lrc").mouseenter(function () {
                         if($(".aplayer-icon-lrc-inactivity").length > 0){
                             showMessage("点击这里，可以显示歌词~", 3000);   
@@ -1114,23 +1115,27 @@ if (mashiro_option.float_player_on) {
                             showMessage("点击这里，可以隐藏歌词~", 3000);   
                          }                         
                     });                                       
+                    //解决
                     $(".aplayer-icon.aplayer-icon-play").mouseenter(function () {
                         var msgp = ["想听歌吗？","可以播放来自网易云音乐的歌曲！","悄悄告诉你，能听会员、付费、数专的歌哦，嘘！","喜欢的话，能去网易云收藏一下歌单嘛？","现在共有311首歌，还在追加中！","来听歌吧！"];
                         var p = Math.floor(Math.random()*msgp.length);
                         showMessage(msgp[p], 3000);
                     });
+                    //解决。
                     $(".aplayer-icon.aplayer-icon-menu").mouseenter(function () {
                         var msgp = ["歌单：8290035602","喜欢的话，能去网易云收藏一下歌单嘛？","现在共有311首歌，还在追加中！","欢迎大家给我推荐天依好听的歌！"];
                         var p = Math.floor(Math.random()*msgp.length);
                         showMessage(msgp[p], 3000);
                     });
+                    //点击判断解决
                     $(".aplayer-icon-menu").click(function () {
                         if ($(".aplayer-list-hide").length > 0) {
                         showMessage("我又出来啦！ﾟヽ(｡◕‿◕｡)ﾉﾟ",3000);
                     } else {
                         showMessage("∑(っ°Д°;)っ耶？我被挡住了QAQ！", 3000);
                         }
-                    });                                                 
+                    });                                 
+                    //悬浮判断解决
                     $(".aplayer-pic").hover(function () {
                         if($(".aplayer-play").length > 0){
                            showMessage("播放", 3000);   
@@ -1151,6 +1156,7 @@ if (mashiro_option.float_player_on) {
                     });
                     var apSwitchTag = 0;
                     $(".aplayer.aplayer-fixed .aplayer-body").addClass("ap-hover");
+                    //点击判断。
                     $(".aplayer-miniswitcher").click(function () {
                         if (apSwitchTag == 0) {
                             $(".aplayer.aplayer-fixed .aplayer-body").removeClass("ap-hover");
@@ -1679,6 +1685,7 @@ var home = location.href,
             $('#bgvideo').attr('src', Poi.movies.url + '/' + _t + '.mp4');
             $('#bgvideo').attr('video-name', _t);
         },
+        //极其复杂的判断。
         LV: function () {
             var _btn = $('#video-btn');
             _btn.on('click', function () {
@@ -1712,32 +1719,9 @@ var home = location.href,
                         Siren.splay();
                     }
                 }
-                s.onended = function () {
-                    $('#bgvideo').attr('src', '');
-                    $('#video-add').hide();
-                    _btn.addClass('loadvideo').removeClass('video-pause').removeClass('videolive').removeClass('haslive');
-                    $('.focusinfo').css({
-                        "top": "49.3%"
-                    });
-                    $('#banner_wave_1').css({
-                        "height": "65px"
-                    });
-                    $('#banner_wave_2').css({
-                        "height": "80px"
-                    });
-                    $('.headertop-down').css({
-                        "bottom":"60px"
-                    });
-                    $('.headertop::before').css({
-                        "bottom":"0px"
-                    });
-                    document.styleSheets[0].deleteRule(0)
-                    $('#landlord').css({
-                        "bottom":"0"
-                    });
-                    startFalling();
-                }
+               
             });
+            //悬浮判断
             $("#video-btn").mouseenter(function () {
                 if($(".loadvideo.videolive").length > 0){
                     var msgp = ["想看看我的表演吗！",

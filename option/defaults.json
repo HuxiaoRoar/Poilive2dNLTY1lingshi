@@ -423,18 +423,8 @@
         "现在共有311首歌，还在追加中！",
         "来听歌吧！"
       ]
-    },
-    {
-      "selector": ".loadvideo.videolive",
-      "text": [
-        "想看看我的表演吗！",
-        "有天依的精彩演出和经典PV哦！",
-        "走过路过，不要错过！精彩演出，即将上演",
-        "旁友，这有好康的视频，看看？",
-        "目前有28个节目和1个隐藏节目哦!",
-        "来看看我的视频吧！"
-      ]
-    }   
+    }
+ 
 
 
   ],
@@ -467,10 +457,80 @@
         "我们中有的人暗淡无光，有的人鲜艳亮丽，有的光彩照人，但是偶尔，你也会遇到如同彩虹般绚丽的人，当你真遇到时，其他一切都不重要了",
         "我们都出生在阴沟里,但仍有人仰望星空"
       ]
+    }
+  ],
+  "mouse_condition_hover": [
+    {
+      "selector": ".aplayer-pic",
+      "condition": "$('.aplayer-play').length > 0",
+      "text_true": [
+        "播放"
+      ],
+      "text_false": [
+        "暂停"
+      ]
     },
     {
-      "selector": "#video-btn.loadvideo.videolive",
-      "text": [
+      "selector": ".aplayer-icon-lrc",
+      "condition": "$(this).hasClass('aplayer-icon-lrc-inactivity')",
+      "text_true": [
+        "点击这里，可以显示歌词~"
+      ],
+      "text_false": [
+        "点击这里，可以隐藏歌词~"
+      ]
+    },
+    {
+      "selector": "#video-btn",
+      "condition": "$(this).is('.loadvideo.videolive')",
+      "text_true": [
+        "想看看我的表演吗！",
+        "有天依的精彩演出和经典PV哦！",
+        "走过路过，不要错过！精彩演出，即将上演",
+        "旁友，这有好康的视频，看看？",
+        "目前有28个节目和1个隐藏节目哦!",
+        "来看看我的视频吧！"
+      ],
+      "text_false": []
+    },
+    {
+      "selector": "#video-btn",
+      "condition": "$(this).is('.haslive.video-play')",
+      "text_true": [
+        "继续播放！",
+        "休息好了吗？那我继续播放咯。",
+        "再看一会吧",
+        "至少把这个视频看完嘛！",
+        "觉得视频好看嘛？别忘了来b站关注天依哦"
+      ],
+      "text_false": []
+    }
+  ],
+  "mouse_condition_click_msgs": [
+    {
+      "selector": ".aplayer-miniswitcher",
+      "condition": "$('.aplayer-body').hasClass('ap-hover')",
+      "text_true": [
+        "展开"
+      ],
+      "text_false": [
+        "收起"
+      ]
+    },
+    {
+      "selector": ".aplayer-icon-menu",
+      "condition": "$('.aplayer-list').hasClass('aplayer-list-hide')",
+      "text_true": [
+        "∑(っ°Д°;)っ耶？我被挡住了QAQ！"
+      ],
+      "text_false": [
+        "我又出来啦！ﾟヽ(｡◕‿◕｡)ﾉﾟ"
+      ]
+    },
+    {
+      "selector": "#video-btn",
+      "condition": "$(this).hasClass('loadvideo')",
+      "text_true": [
         "坐好小板凳，演出要开始咯！",
         "精彩即将上演！",
         "视频加载中，请耐心等待！",
@@ -479,33 +539,34 @@
         "不打扰你看视频啦！",
         "视频马上就来！",
         "视频马上好！马上好！"
-      ]
+      ],
+      "text_false": []
     },
     {
-      "selector": "#video-btn.haslive.video-pause.videolive",
-      "text": [
+      "selector": "#video-btn",
+      "condition": "$(this).is('.haslive.video-pause.videolive')",
+      "text_true": [
         "唔。。。我好像睡着了。。。",
         "我回来啦！",
         "你的小可爱突然出现！",
         "看累了？休息一会吧！"
-      ]
+      ],
+      "text_false": []
     },
     {
-      "selector": "#video-btn.haslive.video-play",
-      "text": [
+      "selector": "#video-btn",
+      "condition": "$(this).is('.haslive.video-play')",
+      "text_true": [
+        "我又润啦！",
+        "我又躲起来啦！",
         "下半场开始！",
         "演出继续！",
         "这次看完嘛，让我多睡会。"
-      ]
-    },
-    {
-      "selector": ".aplayer-icon-menu",
-      "text": [
-        "我又出来啦！ﾟヽ(｡◕‿◕｡)ﾉﾟ"
-      ]
+      ],
+      "text_false": []
     }
   ],
-
+  
   "mouse_copy_msgs": [
     "你都复制了些什么呀，转载要记得加上出处哦！"
   ],

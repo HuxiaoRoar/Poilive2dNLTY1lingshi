@@ -170,6 +170,44 @@ jQuery(document).ready(function ($) {
             });
             $(this).removeAttr('name'); // 防止原生提交字符串
         });
+
+        $('.condition-interaction-container').each(function () {
+            var containerId = $(this).attr('id').replace('_container', '');
+            var globalIndex = 0;
+
+            $(this).find('.selector-group-box').each(function () {
+                var selector = $(this).find('.group-selector-input').val().trim();
+                if (!selector) return;
+
+                var condition = $(this).find('.group-condition-input').val().trim();
+                var trueLines = $(this).find('.group-text-true').val().split(/\r?\n/).filter(function (v) { return v.trim() !== ''; });
+                var falseLines = $(this).find('.group-text-false').val().split(/\r?\n/).filter(function (v) { return v.trim() !== ''; });
+
+                // 只有当存在有效判断规则或台词时，才将其编入提交队列
+                if (trueLines.length > 0 || falseLines.length > 0 || condition) {
+                    var box = $(this);
+
+                    // 生成基础文本 hidden
+                    box.append('<input type="hidden" name="poilive2d_options[' + containerId + '][' + globalIndex + '][selector]" value="' + selector + '">');
+                    box.append('<input type="hidden" name="poilive2d_options[' + containerId + '][' + globalIndex + '][condition]" value="' + condition + '">');
+
+                    // 生成真数组 hidden
+                    trueLines.forEach(function (val) {
+                        box.append('<input type="hidden" name="poilive2d_options[' + containerId + '][' + globalIndex + '][text_true][]" value="' + val.trim() + '">');
+                    });
+
+                    // 生成假数组 hidden
+                    falseLines.forEach(function (val) {
+                        box.append('<input type="hidden" name="poilive2d_options[' + containerId + '][' + globalIndex + '][text_false][]" value="' + val.trim() + '">');
+                    });
+
+                    globalIndex++;
+                }
+            });
+            // 剥夺原表单 name 属性，防止干扰
+            $(this).find('input:not([type=hidden]), textarea').removeAttr('name');
+        });
+
     });
 
     // ==========================================
@@ -226,6 +264,32 @@ jQuery(document).ready(function ($) {
                 var validLines = lines.map(function(t) { return t.trim(); }).filter(function(t) { return t !== ''; });
                 if (validLines.length > 0) {
                     data[key].push({ selector: sel, text: validLines });
+                }
+            });
+        });
+
+        // (NEW) 抓取动态条件容器
+        $currentTab.find('.condition-interaction-container').each(function () {
+            var key = $(this).attr('id').replace('_container', '');
+            data[key] = [];
+
+            $(this).find('.selector-group-box').each(function () {
+                var sel = $(this).find('.group-selector-input').val().trim();
+                if (!sel) return;
+
+                var cond = $(this).find('.group-condition-input').val().trim();
+
+                // 获取文本并过滤空行
+                var tLines = $(this).find('.group-text-true').val().split(/\r?\n/).map(function (t) { return t.trim(); }).filter(function (t) { return t !== ''; });
+                var fLines = $(this).find('.group-text-false').val().split(/\r?\n/).map(function (t) { return t.trim(); }).filter(function (t) { return t !== ''; });
+
+                if (tLines.length > 0 || fLines.length > 0 || cond) {
+                    data[key].push({
+                        selector: sel,
+                        condition: cond,
+                        text_true: tLines,
+                        text_false: fLines
+                    });
                 }
             });
         });
@@ -309,6 +373,47 @@ jQuery(document).ready(function ($) {
                     $groupedTextarea.append(html);
                 });
                 $groupedTextarea.find('.group-text-area').trigger('input');
+                return;
+            }
+
+            // (NEW) 重建动态条件容器
+            var $conditionContainer = $('#' + key + '_container.condition-interaction-container');
+            if ($conditionContainer.length) {
+                $conditionContainer.empty();
+
+                var items = Array.isArray(value) ? value : [];
+                if (items.length === 0) items = [{ selector: '', condition: '', text_true: [], text_false: [] }];
+
+                items.forEach(function (item) {
+                    if (item.selector) {
+                        var tContent = Array.isArray(item.text_true) ? item.text_true.join('\n') : '';
+                        var fContent = Array.isArray(item.text_false) ? item.text_false.join('\n') : '';
+                        var cond = item.condition || '';
+
+                        var html = '<div class="selector-group-box" style="display: flex; margin-bottom: 10px; align-items: flex-start; gap: 10px;">' +
+                            // 左侧 200px 选框
+                            '<input type="text" class="regular-text group-selector-input" style="box-sizing: border-box; width: 200px; font-weight: bold; margin: 0; height: 40px; line-height: 24px;" value="' + cond_escape(item.selector) + '" placeholder="触发元素 (如: .aplayer-pic)">' +
+                            // 冒号
+                            '<span style="font-weight: bold; margin-top: 10px;">:</span>' +
+                            // 右侧容器
+                            '<div style="flex: 1; display: flex; flex-direction: column; gap: 10px;">' +
+                            // 条件输入框 200px
+                            '<input type="text" class="regular-text group-condition-input" style="box-sizing: border-box; width: 600px; font-family: monospace; margin: 0; height: 40px; line-height: 24px; background-color: #f6f7f7;" value="' + cond_escape(cond) + '" placeholder="判定条件 (如: length > 0)">' +
+                            // 绿框
+                            '<textarea class="large-text group-text-true auto-expand-textarea" rows="1" style="box-sizing: border-box; width: 600px; line-height: 24px; padding: 7px 8px; min-height: 40px; margin: 0; resize: vertical; overflow: hidden; border: 1px solid #46b450; border-left: 4px solid #46b450;" placeholder="[满足条件时触发] 一行一条回复...">' + cond_escape(tContent) + '</textarea>' +
+                            // 红框
+                            '<textarea class="large-text group-text-false auto-expand-textarea" rows="1" style="box-sizing: border-box; width: 600px; line-height: 24px; padding: 7px 8px; min-height: 40px; margin: 0; resize: vertical; overflow: hidden; border: 1px solid #dc3232; border-left: 4px solid #dc3232;" placeholder="[不满足条件时触发] 一行一条回复...">' + cond_escape(fContent) + '</textarea>' +
+                            '</div></div>';
+
+                        $conditionContainer.append(html);
+                    }
+                });
+
+                // 防止 XSS 注射破环 HTML
+                function cond_escape(str) { return $('<div>').text(str).html(); }
+
+                // 触发重新计算高度
+                $conditionContainer.find('.auto-expand-textarea').trigger('input');
                 return;
             }
 
@@ -412,7 +517,7 @@ jQuery(document).ready(function ($) {
         var subsetToReset = {};
 
         // 收集当前可见标签页里所有的 key
-        $('.poilive2d-tab-content:visible').find('[name^="poilive2d_options["], .grouped-rows-container, .grouped-textarea-container, .single-repeater-container, .json-array-textarea').each(function () {
+        $('.poilive2d-tab-content:visible').find('[name^="poilive2d_options["], .grouped-rows-container, .grouped-textarea-container, .single-repeater-container, .json-array-textarea, .condition-interaction-container').each(function () {
             var key;
             var nameAttr = $(this).attr('name');
             var idAttr = $(this).attr('id');
