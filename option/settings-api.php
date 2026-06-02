@@ -12,7 +12,7 @@ class PoiLive2D_Settings {
 
     public function __construct() {
         add_action('admin_init', array($this, 'page_init'));
-        
+        add_action('current_screen', array($this, 'add_custom_help_tabs'));
         // 读取 defaults.json 文件
         $default_file = plugin_dir_path(__FILE__) . 'defaults.json';
         if (file_exists($default_file)) {
@@ -154,11 +154,11 @@ class PoiLive2D_Settings {
          * ========================================================================== */       
         
         add_settings_section('section_interactive_condition', '高级鼠标交互设置：', null, 'poilive2d-interactive');        
-        $this->add_field('poilive2d-interactive', 'section_interactive_condition', 'mouse_condition_hover', '条件判断交互-悬停', 'condition_interaction_callback', '无需判断的直接留空条件框即可。');
-        $this->add_field('poilive2d-interactive', 'section_interactive_condition', 'mouse_condition_click_msgs', '条件判断交互-点击', 'condition_interaction_callback', '无需判断的直接留空条件框即可。');
+        $this->add_field('poilive2d-interactive', 'section_interactive_condition', 'mouse_condition_hover', '条件判断交互-悬停', 'condition_interaction_callback', '支持单向触发，对于无需反应的状态，留空文本框即可');
+        $this->add_field('poilive2d-interactive', 'section_interactive_condition', 'mouse_condition_click_msgs', '条件判断交互-点击', 'condition_interaction_callback', '支持单向触发，对于无需反应的状态，留空文本框即可');
 
 
-add_settings_section('section_interactive_other', '进出交互设置：', null, 'poilive2d-interactive');
+        add_settings_section('section_interactive_other', '进出交互设置：', null, 'poilive2d-interactive');
         $this->add_field('poilive2d-interactive', 'section_interactive_other', 'mouse_copy_msgs', '复制信息时的提示', 'repeater_single_callback');
         $this->add_field('poilive2d-interactive', 'section_interactive_other', 'mouse_hide_msgs', '隐藏角色的提示', 'repeater_single_callback');
         $this->add_field('poilive2d-interactive', 'section_interactive_other', 'mouse_show_msgs', '显示角色提示', 'repeater_single_callback');
@@ -183,6 +183,122 @@ add_settings_section('section_interactive_other', '进出交互设置：', null,
 
         add_settings_section('section_adv_audio', 'Sing设置：', null, 'poilive2d-advanced');
         $this->add_field('poilive2d-advanced', 'section_adv_audio', 'songs', '播放列表', 'grouped_double_callback');
+    }
+
+
+// 【新增】：原生帮助面板的具体配置
+    public function add_custom_help_tabs() {
+        $screen = get_current_screen();
+
+        // ⚠️ 极其重要：拦截判断，防止污染其他 WordPress 后台页面！
+        // 请将这里的 'poilive2d' 替换为你插件在注册菜单时 (add_menu_page/add_options_page) 真实使用的菜单 slug
+        if ( ! isset($_GET['page']) || $_GET['page'] !== 'poilive2d' ) { 
+            return;
+        }
+
+        // 1. 添加左侧第一个标签页：基础指南
+        $screen->add_help_tab(array(
+            'id'      => 'poilive2d_help_basic',
+            'title'   => '基础指南',
+            'content' => '
+                <h3>欢迎使用 PoiLive2D (新·洛天依)</h3>     
+                <p><strong>左侧</strong> 可以按标签查看不同页的设置帮助。</p>
+                <p><strong>右侧</strong> 可以查看最新版本和更新日志以及问题反馈。</p>
+                <p><strong>底部按键介绍：</strong></p>
+                <li><strong>保存：</strong> 设置页面支持 <code>Ctrl + S</code> 或 <code>Cmd + S</code> 快速保存，与点击按钮同效。</li>
+                <li><strong>恢复本页默认：</strong> 可以将当前页面的设置恢复为默认值。</li>
+                <li><strong>JSON 源码编辑器：</strong> 可以直接编辑本页设置的 json 文件，方便批量添加对话文本。</li>
+            ',
+        ));
+
+        // 2. 添加左侧第二个标签页：模型与变装
+        $screen->add_help_tab(array(
+            'id'      => 'poilive2d_help_models',
+            'title'   => '模型与变装',
+            'content' => '
+                <h3>添加第三方模型？</h3>
+                <ul>
+                    <li>1. 将标准 Live2D 模型文件夹直接上传到插件的 <code>live2d/model/</code> 目录下。（目前仅支持二代模型，后续更新。）</li>                    
+                    <li>2. 如果想支持点击“变装”按钮切换衣服，请确保模型文件夹下有名为 <code>textures</code> 的子目录，并且衣服贴图不止一套。</li>
+                </ul>
+            ',
+        ));
+
+        // 3. 添加左侧第三个标签页：一言设置说明
+        $screen->add_help_tab(array(
+            'id'      => 'poilive2d_help_yiyan',
+            'title'   => '一言设置说明',
+            'content' => '
+                <h3></h3>
+                <p>一言功能支持多种 API 来源，请根据你选择的 API 类型，参考以下说明配置占位符：</p>
+                <ul>
+                    <li><strong>依言 (luotianyi.blue)：</strong>{source}-歌词出处、{author}-作曲者、{lyricist}-作词者、{year}-发布年份。</li>
+                    <li><strong>今日诗词 (jinrishici.com)：</strong>{title}-诗词出处、{author}-作者、{dynasty}-朝代。</li>
+                    <li><strong>一言 (v1.hitokoto.cn)：</strong>{source}-出处、{author}-作者\角色、{creator}-投稿者。</li>
+                    <li><strong>fghrsh一言 (fghrsh.net)：</strong> {source}-出处。</li>
+                    <li><strong>本地一言：</strong>{source}-出处、{creator}-作者\角色两个字段。</li>
+                </ul>
+                <p>请根据你选择的 API 类型，合理使用占位符配置“介绍格式”，以获得最佳的展示效果！</p>
+                <hr>
+                <p>本地一言；可以在后台自定义一言内容，一行一条，用|分割部分，格式为“文本内容|出处|作者”。</p>
+                <p>今日诗词：可自由选择新旧API，新api支持sdk，可根据使用者所在地区、天气、时段推荐符合场景的特色诗词，但范围小，内容少，易重复；旧版API无特色推荐，但全库随机，内容多，不易重复。</p>
+                <p>可用HTML。如：<code>&lt;span style=\'{highlight}\'&gt;《{title}》&lt;/span&gt;</code></p>。                
+            ',
+        ));
+
+        // 4. 添加左侧第四个标签页：交互语法说明
+        $screen->add_help_tab(array(
+            'id'      => 'poilive2d_help_interactive',
+            'title'   => '交互条件语法',
+            'content' => '
+                <h3>常规交互设置说明：</h3>
+                <p>可用HTML。如：<code来看看站长写的小作文 <span style=\'color:#0099cc;\'>《{text}》</span> 吧！</code></p> 
+                <p>可批量添加，一行一条，触发后随机抽选。</p>
+                <h3>高级条件判定说明：</h3>
+                <p>在“高级鼠标交互设置”中，你可以通过编写简单的 jQuery 逻辑来控制台词：</p>
+                <ul>
+                    <li><strong>判断是否存在某元素：</strong> <code>$(\'.your-class\').length > 0</code></li>
+                    <li><strong>判断是否包含某状态：</strong> <code>$(this).hasClass(\'active\')</code></li>
+                    <li><strong>判断是否处于某状态：</strong> <code>$(this).is(\'.loadvideo.videolivee\')</code></li>
+                </ul>
+                <p>支持单向触发，对于无需反应的状态，留空文本框即可</p>
+            ',
+        ));
+
+         // 5. 添加左侧第五个标签页：关于
+        $screen->add_help_tab(array(
+            'id'      => 'poilive2d_help_about',
+            'title'   => '关于与鸣谢',
+            'content' => '
+                <h3>关于 新·洛天依Live2D 插件</h3>
+                <p>本插件基于live2d，经历众人插件迭代修改而来，旨在为 WordPress 网站添加 洛天依 Live2D 人物，更多详情可看右侧"最新版本及说明"。</p>        
+                <p>原模型来自手游《药水制作师》。贴图修改：unsignedzhang&虎啸</p>
+                <p>本插件与原插件们均遵循GPLv2协议开源。</p>       
+                <p><a href="https://space.bilibili.com/36081646/" target="_blank">洛天依</a>版权归属<a href="https://vsinger.com/" target="_blank">上海禾念</a>。</p>
+                <hr>
+                <h3>鸣谢</h3>
+                <ul>
+                    <li><strong>PoiLive2D 原版</strong> (v1.06) —— 作者：<a href="https://daidr.me" target="_blank">戴兜</a> [ <a href="https://daidr.me/archives/code-176.html" target="_blank">说明&下载页</a> ]</li>
+                    <li><strong>PoiLive2D 洛天依版</strong> (v1.10) —— 作者：<a href="https://unsignedzhang.cn/" target="_blank">unsigned</a> [ <a href="https://unsignedzhang.cn/luotianyi-live2d/" target="_blank">说明&下载页</a> ]</li>
+                    <li><strong>PoiLive2D 魔改版</strong> (v0.9.A) —— 作者：<a href="https://omega.im/63/" targset="_blank">电波万事屋</a> [ <a href="https://www.omega.im/63/" target="_blank">说明&下载页</a> ]</li>
+                    <li><strong>Live 2D</strong> (v2.2.0) —— 作者：<a href="https://github.com/jiangweifang" target="_blank">天堂菌</a> [ <a href="https://www.live2dweb.com/" target="_blank">说明&下载页</a> ]</li>
+                </ul>
+                
+
+            ',
+        ));
+
+         
+
+        //6. 添加右侧固定的“侧边栏”
+
+        $screen->set_help_sidebar(
+            '<p><strong>更多支持</strong></p>' .
+            '<p><a href="https://www.luotianyi.blue/2023-06/new·luotianyi-live2d.html" target="_blank">最新版本和更新说明</a></p>' 
+            '<p><a href="https://www.luotianyi.blue" target="_blank">访问作者博客</a></p>' .
+            '<p><a href="https://github.com/你的github" target="_blank">在 GitHub 提交 Bug</a></p>'
+
+        );
     }
 
     // 辅助函数：快速添加字段
@@ -237,7 +353,7 @@ add_settings_section('section_interactive_other', '进出交互设置：', null,
     public function text_callback($params) {
         $id = $params['id'];
         $val = $this->get_val($id, '');
-        echo '<input type="text" name="poilive2d_options['.$id.']" id="'.$id.'" value="'.esc_attr($val).'" class="regular-text">';
+        echo '<input type="text" name="ui_temp" name="poilive2d_options['.$id.']" id="'.$id.'" value="'.esc_attr($val).'" class="regular-text">';
     }
 
 public function number_callback($params) {
@@ -318,7 +434,7 @@ public function number_callback($params) {
         echo '<div class="selector-group-box" style="display: flex; margin-bottom: 10px; align-items: flex-start; gap: 10px;">';
         
         // 应用左侧动态 placeholder
-        echo '<input type="text" class="regular-text group-selector-input" style="width: 200px; font-weight: bold; margin: 0;" value="'.esc_attr($selector).'" placeholder="'.esc_attr($placeholder_left).'">';
+        echo '<input type="text" name="ui_temp" class="regular-text group-selector-input" style="width: 200px; font-weight: bold; margin: 0;" value="'.esc_attr($selector).'" placeholder="'.esc_attr($placeholder_left).'">';
         
         echo '<span style="font-weight: bold; margin-top: 5px;">:</span>';
         echo '<div class="group-right-pool" style="flex: 1; display: flex; flex-direction: column; gap: 5px;">';
@@ -328,7 +444,7 @@ public function number_callback($params) {
             echo '<div class="text-row" style="display: flex; gap: 5px; align-items: center;">';
             
             // 应用右侧动态 placeholder
-            echo '<input type="text" class="regular-text group-text-input" style="width: 600px; margin: 0;" value="'.esc_attr($text).'" placeholder="'.esc_attr($placeholder_right).'">';
+            echo '<input type="text" name="ui_temp" class="regular-text group-text-input" style="width: 600px; margin: 0;" value="'.esc_attr($text).'" placeholder="'.esc_attr($placeholder_right).'">';
             
             echo '<button type="button" class="button remove-row-styled">-</button>'; 
             if ($is_last) echo '<button type="button" class="button add-text-row-styled">+</button>';
@@ -374,9 +490,9 @@ public function number_callback($params) {
 
             $line_count = 0;
             foreach ($texts as $line) {
-                $len = mb_strlen($line, 'UTF-8');
-                if ($len > 82) {
-                    $line_count += ceil($len / 82); 
+                $width = mb_strwidth($line, 'UTF-8');
+                if ($width > 82) {
+                    $line_count += ceil($width / 82); 
                 } else {
                     $line_count += 1;
                 }
@@ -388,12 +504,12 @@ public function number_callback($params) {
 
             echo '<div class="selector-group-box" style="display: flex; margin-bottom: 10px; align-items: flex-start; gap: 10px;">';
             // 左侧输入框：增加 box-sizing 锁定 40px 物理高度
-            echo '<input type="text" class="regular-text group-selector-input" style="box-sizing: border-box; width: 200px; font-weight: bold; margin: 0; height: 40px; line-height: 24px;" value="'.esc_attr($selector).'" placeholder="选择器">';
+            echo '<input type="text" name="ui_temp" class="regular-text group-selector-input" style="box-sizing: border-box; width: 200px; font-weight: bold; margin: 0; height: 40px; line-height: 24px;" value="'.esc_attr($selector).'" placeholder="选择器">';
             echo '<span style="font-weight: bold; margin-top: 10px;">:</span>';
 
             echo '<div style="flex: 1;">';            
             // 右侧文本框：修改 padding 为 7px 8px，增加 box-sizing
-            echo '<textarea class="large-text group-text-area auto-expand-textarea" rows="1" style="box-sizing: border-box; width: 600px; line-height: 24px; padding: 7px 8px; min-height: 40px; height: '.$pre_height.'px; margin: 0; resize: vertical; overflow: hidden;" placeholder="一行一条回复...">'.esc_textarea($textarea_content).'</textarea>';
+            echo '<textarea class="large-text group-text-area auto-expand-textarea" name="ui_temp" rows="1" style="box-sizing: border-box; width: 600px; line-height: 24px; padding: 7px 8px; min-height: 40px; height: '.$pre_height.'px; margin: 0; resize: vertical; overflow: hidden;" placeholder="一行一条回复...">'.esc_textarea($textarea_content).'</textarea>';
             echo '</div></div>';
         }
         echo '</div>';
@@ -413,7 +529,7 @@ public function number_callback($params) {
         foreach ($items as $index => $item) {
             $is_last = ($index === count($items) - 1);
             echo '<div class="text-row" style="display: flex; gap: 5px; align-items: center; margin-bottom: 5px;">';
-            echo '<input type="text" class="regular-text single-text-input" style="width: 600px; margin: 0;" value="'.esc_attr($item).'" placeholder="输入内容">';
+            echo '<input type="text" name="ui_temp" class="regular-text single-text-input" style="width: 600px; margin: 0;" value="'.esc_attr($item).'" placeholder="输入内容">';
             echo '<button type="button" class="button remove-row-styled">-</button>';
             if ($is_last) echo '<button type="button" class="button add-single-row-styled">+</button>';
             echo '</div>';
@@ -497,8 +613,8 @@ public function number_callback($params) {
             // 高度防闪烁计算：[真] 文本框 (完全对标 grouped_textarea_callback 的算法)
             $line_count_t = 0;
             foreach ($item['text_true'] as $line) {
-                $len_t = mb_strlen($line, 'UTF-8');
-                $line_count_t += ($len_t > 82) ? ceil($len_t / 82) : 1;
+                $width_t = mb_strwidth($line, 'UTF-8');
+                $line_count_t += ($width_t > 82) ? ceil($width_t / 82) : 1;
             }
             if ($line_count_t == 0) $line_count_t = 1;
             $pre_height_t = max(40, $line_count_t * 24 + 16);
@@ -506,8 +622,8 @@ public function number_callback($params) {
             // 高度防闪烁计算：[假] 文本框
             $line_count_f = 0;
             foreach ($item['text_false'] as $line) {
-                $len_f = mb_strlen($line, 'UTF-8');
-                $line_count_f += ($len_f > 82) ? ceil($len_f / 82) : 1;
+                $width_t = mb_strwidth($line, 'UTF-8');
+                $line_count_t += ($width_t > 82) ? ceil($width_t / 82) : 1;
             }
             if ($line_count_f == 0) $line_count_f = 1;
             $pre_height_f = max(40, $line_count_f * 24 + 16);
@@ -516,7 +632,7 @@ public function number_callback($params) {
             echo '<div class="selector-group-box" style="display: flex; margin-bottom: 10px; align-items: flex-start; gap: 10px;">';
 
             // 1. 左侧：触发元素选择器 (强制 200px 宽，40px 高)
-            echo '<input type="text" class="regular-text group-selector-input" style="box-sizing: border-box; width: 200px; font-weight: bold; margin: 0; height: 40px; line-height: 24px;" value="'.esc_attr($item['selector']).'" placeholder="触发元素 (如: .aplayer-pic)">';
+            echo '<input type="text" name="ui_temp" class="regular-text group-selector-input" style="box-sizing: border-box; width: 200px; font-weight: bold; margin: 0; height: 40px; line-height: 24px;" value="'.esc_attr($item['selector']).'" placeholder="触发元素 (如: .aplayer-pic)">';
             
             // 2. 中间：冒号
             echo '<span style="font-weight: bold; margin-top: 10px;">:</span>';
@@ -525,13 +641,13 @@ public function number_callback($params) {
             echo '<div style="flex: 1; display: flex; flex-direction: column; gap: 10px;">';
             
             // 右侧第一行：判定条件 (强制 200px 宽，和左边对称，40px 高)
-            echo '<input type="text" class="regular-text group-condition-input" style="box-sizing: border-box; width: 600px; font-family: monospace; margin: 0; height: 40px; line-height: 24px; background-color: #ffffff;" value="'.esc_attr($item['condition']).'" placeholder="判定条件 (如: length > 0)">';
+            echo '<input type="text" name="ui_temp" class="regular-text group-condition-input" style="box-sizing: border-box; width: 600px; font-family: monospace; margin: 0; height: 40px; line-height: 24px; background-color: #ffffff;" value="'.esc_attr($item['condition']).'" placeholder="判定条件 (如: length > 0)">';
             
             // 右侧第二行：满足条件时触发 (绿框，600px 宽)
-            echo '<textarea class="large-text group-text-true auto-expand-textarea" rows="1" style="box-sizing: border-box; width: 600px; line-height: 24px; padding: 7px 8px; min-height: 40px; height: '.$pre_height_t.'px; margin: 0; resize: vertical; overflow: hidden; border: 1px solid #46b450; border-left: 4px solid #46b450;" placeholder="[满足条件时触发] 一行一条... 留空不触发">'.esc_textarea($true_content).'</textarea>';
+            echo '<textarea class="large-text group-text-true auto-expand-textarea" name="ui_temp" rows="1" style="box-sizing: border-box; width: 600px; line-height: 24px; padding: 7px 8px; min-height: 40px; height: '.$pre_height_t.'px; margin: 0; resize: vertical; overflow: hidden; border: 1px solid #46b450; border-left: 4px solid #46b450;" placeholder="[满足条件时触发] 一行一条... 留空不触发">'.esc_textarea($true_content).'</textarea>';
             
             // 右侧第三行：不满足条件时触发 (红框，600px 宽)
-            echo '<textarea class="large-text group-text-false auto-expand-textarea" rows="1" style="box-sizing: border-box; width: 600px; line-height: 24px; padding: 7px 8px; min-height: 40px; height: '.$pre_height_f.'px; margin: 0; resize: vertical; overflow: hidden; border: 1px solid #dc3232; border-left: 4px solid #dc3232;" placeholder="[不满足条件时触发] 一行一条... 留空不触发">'.esc_textarea($false_content).'</textarea>';
+            echo '<textarea class="large-text group-text-false auto-expand-textarea" name="ui_temp" rows="1" style="box-sizing: border-box; width: 600px; line-height: 24px; padding: 7px 8px; min-height: 40px; height: '.$pre_height_f.'px; margin: 0; resize: vertical; overflow: hidden; border: 1px solid #dc3232; border-left: 4px solid #dc3232;" placeholder="[不满足条件时触发] 一行一条... 留空不触发">'.esc_textarea($false_content).'</textarea>';
             
             echo '</div>'; // 右侧容器结束
             echo '</div>'; // 单组最外层结束
@@ -558,9 +674,9 @@ public function number_callback($params) {
             $current_text = isset($vals[$slug]) ? $vals[$slug] : $default_text;
             
             echo '<p style="display: flex; align-items: center; margin-bottom: 8px;">';
-            echo '<input type="text" class="regular-text" style="width: 200px; background-color: #f0f0f1; color: #8c8f94; border-color: #dcdcdc; margin-right: 10px; cursor: not-allowed;" readonly value="'.esc_attr($label).'">';
+            echo '<input type="text" name="ui_temp" class="regular-text" style="width: 200px; background-color: #f0f0f1; color: #8c8f94; border-color: #dcdcdc; margin-right: 10px; cursor: not-allowed;" readonly value="'.esc_attr($label).'">';
             echo '<span style="margin-right: 10px; font-weight: bold; color: #555;">:</span>';
-            echo '<input type="text" class="regular-text" style="width: 800px;" name="poilive2d_options['.$id.']['.$slug.']" value="'.esc_attr($current_text).'">';
+            echo '<input type="text" name="ui_temp" class="regular-text" style="width: 800px;" name="poilive2d_options['.$id.']['.$slug.']" value="'.esc_attr($current_text).'">';
             echo '</p>';
         }
         echo '</fieldset>';
