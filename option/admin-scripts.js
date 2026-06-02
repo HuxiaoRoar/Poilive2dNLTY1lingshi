@@ -18,7 +18,6 @@ jQuery(document).ready(function ($) {
         this.style.height = (this.scrollHeight + 2) + 'px';
     });
 
-
     $('.poilive2d-tab-link').on('click', function (e) {
         e.preventDefault();
         if ($(this).hasClass('nav-tab-active')) return;
@@ -558,15 +557,7 @@ jQuery(document).ready(function ($) {
     });
 
 
-    //首次加载提示。
-    if (!localStorage.getItem('poilive2d_visited')) {
-        // 显示提示
-        var $tip = $('<div class="notice notice-success" style="position:fixed; top:50px; right:20px; z-index:9999;">Ctrl+S 快速保存设置！</div>');
-        $('body').append($tip);
-        setTimeout(function () { $tip.fadeOut(500, function () { $(this).remove(); }); }, 5000);
-        localStorage.setItem('poilive2d_visited', '1');
-    }
-
     
+
 });
 
