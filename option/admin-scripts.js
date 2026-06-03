@@ -453,7 +453,7 @@ jQuery(document).ready(function ($) {
                 });
             } else {
                 if ($input.is(':radio')) {
-                    $input.filter('[value="' + value + '"]').prop('checked', true);
+                    $input.filter('[value="' + value + '"]').prop('checked', true).trigger('change');
                 } else {
                     $input.val(value);
                     if ($input.hasClass('color-picker')) $input.wpColorPicker('color', value);
@@ -555,6 +555,76 @@ jQuery(document).ready(function ($) {
             
         }
     });
+
+
+    
+    // ==========================================
+    // 交互显隐：一言页面的条件触发模块
+    // ==========================================
+
+    // 1. 精准锁定各模块所在的 tr 行 (利用必然存在的 name 属性作为锚点)
+    var $jinrishiciRow = $('th:contains("今日诗词推荐模式")').closest('tr');
+    var $localMsgsRow = $('th:contains("本地一言列表")').closest('tr');
+    var $msgsRow = $('th:contains("二句格式")').closest('tr');
+    var $suffixesRow = $('th:contains("后缀格式")').closest('tr');
+
+    // 新增：封装一个内联文本框的过滤函数
+    function filterTipRows(currentApi) {
+        $('.hitokoto-tip-row').each(function () {
+            // 如果行的 data-api 属性等于当前选择的 API，则显示，否则直接隐藏
+            if ($(this).data('api') === currentApi) {
+                $(this).show();
+                $(this).css('display', 'flex');
+            } else {
+                $(this).hide();
+            }
+        });
+    }
+
+    // 监听【一言 API】(Select) 的切换事件
+    $('#hitokoto_api').on('change', function () {
+        var selectedApi = $(this).val();
+
+        if (selectedApi === 'jinrishici') {
+            $jinrishiciRow.removeClass('hidden-settings-row').show();
+        } else {
+            $jinrishiciRow.addClass('hidden-settings-row').hide();
+        }
+
+        if (selectedApi === 'local') {
+            $localMsgsRow.removeClass('hidden-settings-row').show();
+            $localMsgsRow.find('.auto-expand-textarea').trigger('input');
+        } else {
+            $localMsgsRow.addClass('hidden-settings-row').hide();
+        }
+
+        // 执行内联文本框过滤
+        filterTipRows(selectedApi);
+    });
+    // 监听【一言与来源排列方式】(Radio) 的切换事件
+    $('input[name="poilive2d_options[hitokoto_origin]"]').on('change', function () {
+        var originType = $('input[name="poilive2d_options[hitokoto_origin]"]:checked').val();
+
+        if (originType === '0') {
+            $suffixesRow.removeClass('hidden-settings-row').show();
+            $msgsRow.addClass('hidden-settings-row').hide();
+        } else if (originType === '1') {
+            $msgsRow.removeClass('hidden-settings-row').show();
+            $suffixesRow.addClass('hidden-settings-row').hide();
+        } else {
+            $msgsRow.addClass('hidden-settings-row').hide();
+            $suffixesRow.addClass('hidden-settings-row').hide();
+        }
+    });
+
+    // 核心：在页面初始化加载时，以及绑定完所有事件后，立刻拉起一次触发行内显隐
+    filterTipRows($('#hitokoto_api').val());
+
+
+
+
+
+
 
 
     

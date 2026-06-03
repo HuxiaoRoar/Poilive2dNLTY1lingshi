@@ -105,59 +105,59 @@ class PoiLive2D_Settings {
 
         add_settings_section('section_hitokoto_main', '一言设置：', null, 'poilive2d-hitokoto');
         $this->add_field('poilive2d-hitokoto', 'section_hitokoto_main', 'hitokoto_delay', '启用一言', 'number_callback', '一言延迟时间(秒)。如果设置为0，则禁用一言。');
-        // 1. API 选择 
-        $this->add_field('poilive2d-hitokoto', 'section_hitokoto_main', 'hitokoto_api', '一言 API', 'select_callback', [
-            'yiblue'      => '依言(luotianyi.blue)', 
-            'jinrishici'  => '今日诗词(jinrishici.com)', 
-            'hitokoto'    => '官方一言(v1.hitokoto.cn)', 
-            'fghrsh'      => 'fghrsh一言(fghrsh.net)', 
-            'local'       => '本地一言'
-        ]);
-        //1.5 API 选择后续设置（依赖关系）
-        $this->add_field('poilive2d-hitokoto', 'section_hitokoto_main', 'hitokoto_jinrishici_sdk', '今日诗词推荐模式', 'radio_callback', [
-            '0' => '关闭个性化推荐（使用老 API，更随机）', 
-            '1' => '开启个性化推荐（使用SDK，根据地域天气推荐）'
-        ], $jinrishici_sdk_class);   
-        $this->add_field('poilive2d-hitokoto', 'section_hitokoto_main', 'hitokoto_local_msgs', '本地一言列表', 'textarea_array_callback', null, $local_msgs_class);
 
-        $this->add_field('poilive2d-hitokoto', 'section_hitokoto_main', 'hitokoto_origin', '一言与来源排列方式', 'radio_callback', [
+
+
+        $this->add_field('poilive2d-hitokoto', 'section_hitokoto_main', 'hitokoto_origin', '介绍排列', 'radio_callback', [
             '0' => '合为一句。例：长风破浪会有时，直挂云帆济沧海 ——（唐）李白',
             '1' => '分为两句。例：第一句：长风破浪会有时，直挂云帆济沧海。第二句：这句诗词出自《行路难》，是 唐代诗人 李白 创作的！',
             '2' => '不要介绍。例：长风破浪会有时，直挂云帆济沧海']);
+
+        $this->add_field('poilive2d-hitokoto', 'section_hitokoto_main', 'hitokoto_api', '一言 API', 'select_callback', [
+            'yiblue'      => '依言(luotianyi.blue)', 
+            'jinrishici'  => '今日诗词(jinrishici.com)', 
+            'hitokoto'    => '一言(v1.hitokoto.cn)', 
+            'fghrsh'      => 'fghrsh一言(fghrsh.net)', 
+            'local'       => '本地一言'
+        ]);
+
+
          
-        // 2. 来源介绍格式 
-        $this->add_field('poilive2d-hitokoto', 'section_hitokoto_main', 'hitokoto_msgs', '来源介绍格式', 'fixed_tips_callback', [
+        $this->add_field('poilive2d-hitokoto', 'section_hitokoto_main', 'hitokoto_msgs', '二句格式', 'fixed_tips_callback', [
             'dependency' => 1,
+            'current_api' => $current_api,
             'config' => [
                 'yiblue'     => ['label' => '依言', 'default' => '这句一言出自 {source}，是 {creator} 在依言投稿的！'],
                 'jinrishici' => ['label' => '今日诗词', 'default' => '这句诗词出自 《{title}》，是 {dynasty}诗人 {author} 创作的！'],
-                'hitokoto'   => ['label' => '官方一言', 'default' => '这句一言出自 『{source}』{author}，是 {creator} 投稿的。'],
+                'hitokoto'   => ['label' => '一言', 'default' => '这句一言出自 『{source}』{author}，是 {creator} 投稿的。'],
                 'fghrsh'     => ['label' => 'FGHRSH', 'default' => '来看看站长写的小作文 《{text}》 吧！'],
                 'local'      => ['label' => '本地一言', 'default' => '这句一言来自 『{source}』，是 {creator} 投稿的。']
             ]
         ], $msgs_class);
 
-        // 3. 后缀编辑格式 (改为 dependency => 0)
-        $this->add_field('poilive2d-hitokoto', 'section_hitokoto_main', 'hitokoto_suffixes', '后缀编辑格式', 'fixed_tips_callback', [
+        $this->add_field('poilive2d-hitokoto', 'section_hitokoto_main', 'hitokoto_suffixes', '后缀格式', 'fixed_tips_callback', [
             'dependency' => 0,
+            'current_api' => $current_api,
             'config' => [
                 'yiblue'     => ['label' => '依言', 'default' => ' —— {creator}《{source}》'],
                 'jinrishici' => ['label' => '今日诗词', 'default' => ' —— （{dynasty}）{author}《{title}》'],
-                'hitokoto'   => ['label' => '官方一言', 'default' => ' —— {source}{author}'],
+                'hitokoto'   => ['label' => '一言', 'default' => ' —— {source}{author}'],
                 'fghrsh'     => ['label' => 'FGHRSH', 'default' => ' —— 《{source}》'],
                 'local'      => ['label' => '本地一言', 'default' => ' —— {source}（{creator}）']
             ]
         ], $suffixes_class);        
 
+
+        $this->add_field('poilive2d-hitokoto', 'section_hitokoto_main', 'hitokoto_jinrishici_sdk', '今日诗词推荐模式', 'radio_callback', [
+            '0' => '关闭个性化推荐（使用老 API，更随机）', 
+            '1' => '开启个性化推荐（使用SDK，根据地域天气推荐）'
+        ], $jinrishici_sdk_class);
+
+        $this->add_field('poilive2d-hitokoto', 'section_hitokoto_main', 'hitokoto_local_msgs', '本地一言列表', 'textarea_array_callback', null, $local_msgs_class);
+
         /* ==========================================================================
          * TAB 4: 交互设置 (poilive2d-interactive)
-         * ========================================================================== */       
-        
-        add_settings_section('section_interactive_condition', '高级鼠标交互设置：', null, 'poilive2d-interactive');        
-        $this->add_field('poilive2d-interactive', 'section_interactive_condition', 'mouse_condition_hover', '条件判断交互-悬停', 'condition_interaction_callback', '支持单向触发，对于无需反应的状态，留空文本框即可');
-        $this->add_field('poilive2d-interactive', 'section_interactive_condition', 'mouse_condition_click_msgs', '条件判断交互-点击', 'condition_interaction_callback', '支持单向触发，对于无需反应的状态，留空文本框即可');
-
-
+         * ========================================================================== */ 
         add_settings_section('section_interactive_other', '进出交互设置：', null, 'poilive2d-interactive');
         $this->add_field('poilive2d-interactive', 'section_interactive_other', 'mouse_copy_msgs', '复制信息时的提示', 'repeater_single_callback');
         $this->add_field('poilive2d-interactive', 'section_interactive_other', 'mouse_hide_msgs', '隐藏角色的提示', 'repeater_single_callback');
@@ -168,6 +168,10 @@ class PoiLive2D_Settings {
         add_settings_section('section_interactive_mouse', '常规鼠标交互设置：', null, 'poilive2d-interactive');        
         $this->add_field('poilive2d-interactive', 'section_interactive_mouse', 'mouse_hover', '鼠标悬停提示', 'grouped_textarea_callback');
         $this->add_field('poilive2d-interactive', 'section_interactive_mouse', 'mouse_click_msgs', '鼠标点击提示', 'grouped_textarea_callback');
+
+        add_settings_section('section_interactive_condition', '高级鼠标交互设置：', null, 'poilive2d-interactive');        
+        $this->add_field('poilive2d-interactive', 'section_interactive_condition', 'mouse_condition_hover', '条件判断交互-悬停', 'condition_interaction_callback', '支持单向触发，对于无需反应的状态，留空文本框即可');
+        $this->add_field('poilive2d-interactive', 'section_interactive_condition', 'mouse_condition_click_msgs', '条件判断交互-点击', 'condition_interaction_callback', '支持单向触发，对于无需反应的状态，留空文本框即可');
 
         /* ==========================================================================
          * TAB 5: 高级设置 (poilive2d-advanced)
@@ -294,11 +298,11 @@ class PoiLive2D_Settings {
 
         $screen->set_help_sidebar(
             '<p><strong>更多支持</strong></p>' .
-            '<p><a href="https://www.luotianyi.blue/2023-06/new·luotianyi-live2d.html" target="_blank">最新版本和更新说明</a></p>' 
+            '<p><a href="https://www.luotianyi.blue/2023-06/new·luotianyi-live2d.html" target="_blank">最新版本和更新说明</a></p>' .
             '<p><a href="https://www.luotianyi.blue" target="_blank">访问作者博客</a></p>' .
             '<p><a href="https://github.com/你的github" target="_blank">在 GitHub 提交 Bug</a></p>'
-
         );
+
     }
 
     // 辅助函数：快速添加字段
@@ -664,19 +668,25 @@ public function number_callback($params) {
     public function fixed_tips_callback($params) {
         $id = $params['id'];
         $config = $params['args']['config'];
+        
+        // 接收从上方传进来的 current_api
+        $current_api = isset($params['args']['current_api']) ? $params['args']['current_api'] : 'local';
+        
         $vals = $this->get_val($id, array()); 
 
-        // 直接输出 fieldset，不再包裹任何带 display:none 的 div
         echo '<fieldset>';
         foreach ($config as $slug => $data) {
             $label = $data['label'];
             $default_text = $data['default'];
             $current_text = isset($vals[$slug]) ? $vals[$slug] : $default_text;
             
-            echo '<p style="display: flex; align-items: center; margin-bottom: 8px;">';
+            // 降维打击：PHP 端直接决定谁该显示谁该隐藏，彻底杜绝前端闪烁
+            $display_style = ($slug === $current_api) ? 'flex' : 'none';
+            
+            echo '<p class="hitokoto-tip-row" data-api="'.esc_attr($slug).'" style="display: '.$display_style.'; align-items: center; margin-bottom: 8px;">';
             echo '<input type="text" name="ui_temp" class="regular-text" style="width: 200px; background-color: #f0f0f1; color: #8c8f94; border-color: #dcdcdc; margin-right: 10px; cursor: not-allowed;" readonly value="'.esc_attr($label).'">';
             echo '<span style="margin-right: 10px; font-weight: bold; color: #555;">:</span>';
-            echo '<input type="text" name="ui_temp" class="regular-text" style="width: 800px;" name="poilive2d_options['.$id.']['.$slug.']" value="'.esc_attr($current_text).'">';
+            echo '<input type="text" class="regular-text" style="width: 800px;" name="poilive2d_options['.$id.']['.$slug.']" value="'.esc_attr($current_text).'">';
             echo '</p>';
         }
         echo '</fieldset>';
