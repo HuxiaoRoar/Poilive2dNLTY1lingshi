@@ -149,13 +149,13 @@ function initLive2d() {
         });
 
         $('#switch-button').off('click').on('click', () => {
-            $("#live2d").animate({ opacity: '0' }, 100);
+
             var maxTex = modelTexturesMax[currentModel];
 
-            // 【终极装甲】：强制保证衣服 ID 是纯数字
+            // 强制保证衣服 ID 是纯数字
             currentTexId = parseInt(currentTexId);
 
-            // 1. 怎么切下一件？（看设置是顺序还是随机）
+            // 1. 计算下一件衣服（顺序或随机）
             if (poilive2d_config.switch_texture === 'random') {
                 var nextTex;
                 do {
@@ -163,18 +163,37 @@ function initLive2d() {
                 } while (nextTex === currentTexId && maxTex > 1);
                 currentTexId = nextTex;
             } else {
-                currentTexId = (currentTexId % maxTex) + 1; // 顺序循环: 1,2,3...1
+                currentTexId = (currentTexId % maxTex) + 1; // 顺序循环
             }
 
-            // 2. 存入记忆
+           
             if (poilive2d_config.texture_record === '1') {
                 localStorage.setItem('live2d_tex_' + currentModel, currentTexId);
             }
 
-            // 3. 发起加载
+            
             var apiUrl = poilive2d_api_url + "?model=" + encodeURIComponent(currentModel) + "&tex=" + currentTexId;
-            loadlive2d('live2d', apiUrl, showConsoleTips("更换"));
-        })
+
+            $("#live2d").animate({ opacity: '0' }, 200);
+
+            // 2. 启动第一个定时器：死等 200ms，保证幕布已经彻底拉上
+            setTimeout(function () {
+
+                
+                loadlive2d('live2d', apiUrl); // 在一片“漆黑”中偷偷换衣服
+
+                // 3. 启动第二个定时器：给网络下载和模型渲染预留时间 (比如 500 毫秒)
+                // 这个数值你可以自己微调，如果你服务器快，300 也可以；慢的话 800 也可以
+                setTimeout(function () {
+
+                    // 衣服肯定穿好了，重新霸气登场！
+                    $("#live2d").animate({ opacity: '1' }, 200);
+
+                }, 50);
+
+            }, 150);   
+
+        });
 
         $('#catalog-button').on('click', () => {
             var tits = 0, catalog;

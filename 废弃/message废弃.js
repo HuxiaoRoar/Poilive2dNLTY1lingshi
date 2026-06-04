@@ -378,31 +378,21 @@ function initLive2d (){
 
         // --- 变装按钮（切换材质） ---
         $('#switch-button').off('click').on('click', () => {
-            $("#live2d").animate({ opacity: '0' }, 100);
-            var maxTex = modelTexturesMax[currentModel];
+            // 1. 开始淡出：把时间稍微拉长到 200ms 保证视觉平滑
+            $("#live2d").animate({ opacity: '0' }, 200, function () {
+                // 2. 核心：在这个 animate 的回调函数里执行加载
+                // 这意味着：只有当旧模型【100% 完全变透明】后，我们才开始动手干活！
 
-            // 【终极装甲】：强制保证衣服 ID 是纯数字
-            currentTexId = parseInt(currentTexId);
+                loadlive2d('live2d', message_Path + 'model/' + theModel[modelIdx] + '/model.json.php', function () {
+                    // 3. 这里的第三个参数，我们传入了一个真正的匿名函数 function() {}
+                    // 大多数基于 Pio 的 live2d.js 会在模型彻底加载并渲染到 GPU 后，才触发这个回调
 
-            // 1. 怎么切下一件？（看设置是顺序还是随机）
-            if (poilive2d_config.switch_texture === 'random') {
-                var nextTex;
-                do {
-                    nextTex = Math.floor(Math.random() * maxTex) + 1;
-                } while (nextTex === currentTexId && maxTex > 1);
-                currentTexId = nextTex;
-            } else {
-                currentTexId = (currentTexId % maxTex) + 1; // 顺序循环: 1,2,3...1
-            }
+                    showConsoleTips("更换完成了！");
 
-            // 2. 存入记忆
-            if (poilive2d_config.texture_record === '1') {
-                localStorage.setItem('live2d_tex_' + currentModel, currentTexId);
-            }
-
-            // 3. 发起加载
-            var apiUrl = poilive2d_api_url + "?model=" + encodeURIComponent(currentModel) + "&tex=" + currentTexId;
-            loadlive2d('live2d', apiUrl, showConsoleTips("更换"));
+                    // 4. 彻底加载完毕后，重新让模型淡入显现
+                    $("#live2d").animate({ opacity: '1' }, 300);
+                });
+            });
         });
 
 

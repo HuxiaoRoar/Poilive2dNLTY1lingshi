@@ -146,3 +146,4 @@ function live2d_footer()
         <?php
     }
 }
+
