@@ -1,5 +1,5 @@
 // ==========================================
-// Live2D 核心状态与交互控制器 (live2d-core.js)
+// Live2D 核心状态与交互控制器 (Pixi.js 现代化兼容版)
 // ==========================================
 
 var theModel = Object.keys(poilive2d_models_info);
@@ -29,16 +29,21 @@ function resolveInitialState() {
     }
     currentModel = theModel[currentModelIdx];
 
-    var texKey = 'live2d_tex_' + currentModel;
-    var savedTexId = localStorage.getItem(texKey);
     var maxTex = modelTexturesMax[currentModel];
 
-    if (poilive2d_config.texture_record === '1' && savedTexId !== null && parseInt(savedTexId) <= maxTex) {
-        currentTexId = parseInt(savedTexId);
+    // 【修改点 1】：如果是新版模型 (-1)，跳过随机计算，固定衣服 ID 为 1
+    if (typeof maxTex === 'string') {
+        currentTexId = 1;
     } else {
-        currentTexId = Math.floor(Math.random() * maxTex) + 1;
-        if (poilive2d_config.texture_record === '1') {
-            localStorage.setItem(texKey, currentTexId);
+        var texKey = 'live2d_tex_' + currentModel;
+        var savedTexId = localStorage.getItem(texKey);
+        if (poilive2d_config.texture_record === '1' && savedTexId !== null && parseInt(savedTexId) <= maxTex) {
+            currentTexId = parseInt(savedTexId);
+        } else {
+            currentTexId = Math.floor(Math.random() * maxTex) + 1;
+            if (poilive2d_config.texture_record === '1') {
+                localStorage.setItem(texKey, currentTexId);
+            }
         }
     }
 }
@@ -118,11 +123,16 @@ function initLive2d() {
         $('body').append("<div class=\"show-button\">召唤</div>");
     }
 
-    if ($('.l2d-menu').length > 0) {       
+    if ($('.l2d-menu').length > 0) {
 
+        // ==========================================
+        // 【变身】按钮点击事件
+        // ==========================================
         $('#change-button').off('click').on('click', () => {
+            if (window.isModelLoading) return;
             var realIdx = theModel.indexOf(currentModel);
             if (realIdx === -1) realIdx = 0;
+
             if (poilive2d_config.switch_model === 'random') {
                 var nextIdx;
                 do { nextIdx = Math.floor(Math.random() * theModel.length); } while (nextIdx === realIdx && theModel.length > 1);
@@ -130,32 +140,47 @@ function initLive2d() {
             } else {
                 currentModelIdx = (realIdx + 1) % theModel.length;
             }
+
             currentModel = theModel[currentModelIdx];
             if (poilive2d_config.role_record === '1') localStorage.setItem('live2d_role_name', currentModel);
 
+            var maxTex = modelTexturesMax[currentModel];
             var texKey = 'live2d_tex_' + currentModel;
             var savedTexId = localStorage.getItem(texKey);
-            var maxTex = modelTexturesMax[currentModel];
-            if (poilive2d_config.texture_record === '1' && savedTexId !== null && parseInt(savedTexId) <= maxTex) {
-                currentTexId = parseInt(savedTexId);
+
+            // 【修改点 2】：兼容新模型的贴图计算
+            if (typeof maxTex === 'string') {
+                currentTexId = 1;
             } else {
-                currentTexId = Math.floor(Math.random() * maxTex) + 1;
-                if (poilive2d_config.texture_record === '1') localStorage.setItem(texKey, currentTexId);
+                if (poilive2d_config.texture_record === '1' && savedTexId !== null && parseInt(savedTexId) <= maxTex) {
+                    currentTexId = parseInt(savedTexId);
+                } else {
+                    currentTexId = Math.floor(Math.random() * maxTex) + 1;
+                    if (poilive2d_config.texture_record === '1') localStorage.setItem(texKey, currentTexId);
+                }
             }
-            var apiUrl = poilive2d_api_url + "?model=" + encodeURIComponent(currentModel) + "&tex=" + currentTexId;
-            loadlive2d('live2d', apiUrl);
-            // 依赖 message.js 中的函数
+
             showMessage("已切换成 " + currentModel, 5000);
+
+            // 【修改点 3】：使用 InitPoi 替代 loadlive2d，精简动画
+            $("#live2d").animate({ opacity: '0' }, 200, function () {
+                InitPoi(); // 引擎会在加载完成后自动 fadeIn 变亮，完美衔接
+            });
         });
 
+        // ==========================================
+        // 【变装】按钮点击事件
+        // ==========================================
         $('#switch-button').off('click').on('click', () => {
+            if (window.isModelLoading) return;
+            var maxTex = modelTexturesMax[currentModel];            
+            if (typeof maxTex === 'string') {
+                showMessage("当前高清模型暂不支持一键变装哦！", 4000);
+                return; // 直接中止，啥也不干
+            }
 
-            var maxTex = modelTexturesMax[currentModel];
-
-            // 强制保证衣服 ID 是纯数字
             currentTexId = parseInt(currentTexId);
 
-            // 1. 计算下一件衣服（顺序或随机）
             if (poilive2d_config.switch_texture === 'random') {
                 var nextTex;
                 do {
@@ -163,36 +188,17 @@ function initLive2d() {
                 } while (nextTex === currentTexId && maxTex > 1);
                 currentTexId = nextTex;
             } else {
-                currentTexId = (currentTexId % maxTex) + 1; // 顺序循环
+                currentTexId = (currentTexId % maxTex) + 1;
             }
 
-           
             if (poilive2d_config.texture_record === '1') {
                 localStorage.setItem('live2d_tex_' + currentModel, currentTexId);
             }
 
-            
-            var apiUrl = poilive2d_api_url + "?model=" + encodeURIComponent(currentModel) + "&tex=" + currentTexId;
-
-            $("#live2d").animate({ opacity: '0' }, 200);
-
-            // 2. 启动第一个定时器：死等 200ms，保证幕布已经彻底拉上
-            setTimeout(function () {
-
-                
-                loadlive2d('live2d', apiUrl); // 在一片“漆黑”中偷偷换衣服
-
-                // 3. 启动第二个定时器：给网络下载和模型渲染预留时间 (比如 500 毫秒)
-                // 这个数值你可以自己微调，如果你服务器快，300 也可以；慢的话 800 也可以
-                setTimeout(function () {
-
-                    // 衣服肯定穿好了，重新霸气登场！
-                    $("#live2d").animate({ opacity: '1' }, 200);
-
-                }, 50);
-
-            }, 150);   
-
+            // 【修改点 5】：同样使用 InitPoi() 代替老黑盒，彻底告别灵异闪烁
+            $("#live2d").animate({ opacity: '0' }, 200, function () {
+                InitPoi();
+            });
         });
 
         $('#catalog-button').on('click', () => {
@@ -212,26 +218,23 @@ function initLive2d() {
             showMessage(catalog, 10000);
         });
 
-
         $('#hitokoto-button').off('click').on('click', () => {
             showHitokoto();
         });
     }
 
     $('#landlord').hover(() => { $('.l2d-menu').fadeIn(200).css('display', 'flex'); }, () => { $('.l2d-menu').fadeOut(200); });
-    // 隐藏按钮点击事件 (丝滑渐变终极修复版)
+
     $('#hide-button').off('click').on('click', () => {
         var msgs = poilive2d_config.mouse_hide_msgs;
         if (Array.isArray(msgs)) msgs = msgs.filter(function (item) { return item.trim() !== ''; });
 
-        // 【关键修复】：强行关闭 CSS 过渡，防止与 jQuery 动画打架
         $('#landlord').css('transition', 'none');
 
         if (msgs && msgs.length > 0) {
             showMessage(msgs, 3000);
             $('#landlord').fadeOut(1500, function () {
                 $('.show-button').fadeIn(300);
-                // 动画结束后，清空临时加上的 transition，让它恢复原有设定的功能
                 $('#landlord').css('transition', '');
             });
         } else {
@@ -242,7 +245,6 @@ function initLive2d() {
         }
     });
 
-    // 召唤按钮点击事件 (丝滑渐变终极修复版)
     $('.show-button').off('click').on('click', () => {
         $('.show-button').fadeOut(200);
 
@@ -253,9 +255,7 @@ function initLive2d() {
             showMessage(msgs, 5000);
         }
 
-        // 【关键修复】：同样先关闭 CSS 过渡，再执行淡入
         $('#landlord').css('transition', 'none').fadeIn(1000, function () {
-            // 淡入结束后恢复
             $('#landlord').css('transition', '');
         });
     });
@@ -294,7 +294,7 @@ function initLive2d() {
 }
 initLive2d();
 
-// 4. 音乐播放逻辑 (已对接第三页设置)
+// 4. 音乐播放逻辑
 var num = 2;
 function getsong() {
     if (num % 2 == 0) {

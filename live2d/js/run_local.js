@@ -4,11 +4,15 @@
 
 var pixiApp = null;             // 铁打的舞台 (全局只建一次)
 var currentLive2dModel = null;  // 流水的演员
+var isFirstLoad = true;
+window.isModelLoading = false;  // ★ 新增：挂载到全局的加载锁，防止高频狂点
+
 
 function InitPoi() {
     const canvas = document.getElementById('live2d');
     if (!canvas) {
         console.error("未找到指定的 Canvas 元素: live2d");
+        window.isModelLoading = false; // 容错重置
         return;
     }
 
@@ -36,11 +40,33 @@ function InitPoi() {
         });
     }
 
-    // B. 如果舞台上已经有旧演员（变身/变装触发），让他下台并卸妆（释放内存）
+
+    // B. 安全撤下旧演员 (核心防御区)
     if (currentLive2dModel) {
-        pixiApp.stage.removeChild(currentLive2dModel);
-        currentLive2dModel.destroy(); // 彻底销毁旧模型的纹理和内存
-        currentLive2dModel = null;
+        try {
+            // ★ 修复错误 1：在销毁前，强制清理并清空当前显卡的批渲染缓存与几何体状态
+            if (pixiApp.renderer) {
+                if (pixiApp.renderer.batch) pixiApp.renderer.batch.flush();
+                if (pixiApp.renderer.geometry) pixiApp.renderer.geometry.reset();
+            }
+
+            // 从大舞台上将旧演员请下去
+            pixiApp.stage.removeChild(currentLive2dModel);
+
+            // 彻底释放模型和贴图占用的显存
+            currentLive2dModel.destroy({ children: true, texture: true, baseTexture: true });
+
+        } catch (e) {
+            // ★ 修复错误 2 的核心：即使引擎 release 报 undefined 异常，也被此捕获吞掉
+            // 绝不让异常拦截线程，确保下方的新模型加载逻辑 100% 能够顺利运行！
+            console.warn("PoiLive2d: 释放旧模型时发生内部兼容警告，已安全跳过以确保正常渲染。", e);
+        } finally {
+            currentLive2dModel = null;
+            // 再次重置 WebGL 状态机，给新模型留一张绝对干净的白纸
+            if (pixiApp.renderer && pixiApp.renderer.geometry) {
+                pixiApp.renderer.geometry.reset();
+            }
+        }
     }
 
     // C. 判断新演员身份与剧本路径
@@ -100,15 +126,27 @@ function InitPoi() {
         });
 
         // G. 动画淡入与控制台提示
-        showConsoleTips("更换/加载");
+        if (isFirstLoad) {
+            showConsoleTips("加载"); // 只有第一次加载时才打印那一长串绿色的彩蛋
+            isFirstLoad = false;     // 关掉开关
+        } else {
+            // 后续的变身变装，默默把幕布拉开，绝不弹日志烦人
+            showConsoleTips("更换");
+            $("#live2d").animate({ opacity: '1' }, 200);
+        }
     }).catch(error => {
         console.error("Live2D 模型加载失败:", error);
     });
 }
 
-function showConsoleTips(content){
+function showConsoleTips(content) {
     var style_green = "font-family:'微软雅黑';font-size:1em;background-color:#34a853;color:#fff;padding:4px;";
     var style_green_light = "font-family:'微软雅黑';font-size:1em;background-color:#42d268;color:#fff;padding:4px;";
-    console.log("%cPoiLive2d%cPoi模型" + content + "完成", style_green, style_green_light);$("#live2d").animate({opacity:'1'},100);
+    console.log("%cPoiLive2d%cPoi模型" + content + "完成", style_green, style_green_light);
+
+    // 确保模型彻底渲染好之后，再拉开幕布（淡入）
+    $("#live2d").animate({ opacity: '1' }, 200);
 }
-setTimeout("InitPoi()",500);
+
+// 延迟启动，确保 DOM 就绪
+setTimeout(InitPoi, 500);

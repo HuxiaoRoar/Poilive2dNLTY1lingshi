@@ -7,10 +7,15 @@ function live2d_scripts()
     if (!wp_is_mobile()) {
         wp_enqueue_style('live2d-base', LIVE2D_URL . '/live2d/css/live2d.css', array(), LIVE2D_VERSION, 'all');
         wp_enqueue_script('live2d-jquery', LIVE2D_URL . '/live2d/js/jquery.min.js', array('jquery'), LIVE2D_VERSION, true);
-        wp_enqueue_script('live2d-base', LIVE2D_URL . '/live2d/js/live2d.js', array('live2d-jquery'), LIVE2D_VERSION, true);
-        //wp_enqueue_script('live2d-message', LIVE2D_URL . '/live2d/js/message.js', array('live2d-jquery'), LIVE2D_VERSION, true);
-        wp_enqueue_script('live2d-message', LIVE2D_URL . '/live2d/js/live2d-message.js', array('live2d-jquery'), LIVE2D_VERSION, true);
-         wp_enqueue_script('live2d-ctrl', LIVE2D_URL . '/live2d/js/live2d-ctrl.js', array('live2d-jquery', 'live2d-message'), LIVE2D_VERSION, true);
+        wp_enqueue_script('pixi-js', plugin_dir_url(__FILE__) . 'live2d/js/pixi.min.js', array(), '7.4.2', true);
+
+        wp_enqueue_script('live2d-core-v2', plugin_dir_url(__FILE__) . 'live2d/js/live2d-v2core.min.js', array(), null, true);
+        wp_enqueue_script('live2d-core-v4', plugin_dir_url(__FILE__) . 'live2d/js/live2dcubismcore.min.js', array(), null, true);
+
+        wp_enqueue_script('pixi-live2d-display', plugin_dir_url(__FILE__) . 'live2d/js/pixi-live2d-display.min.js', array('pixi-js', 'live2d-core-v2', 'live2d-core-v4'), null, true);
+
+        wp_enqueue_script('poilive2d-message', plugin_dir_url(__FILE__) . 'live2d/js/live2d-message.js', array('jquery'), null, true);
+        wp_enqueue_script('poilive2d-ctrl', plugin_dir_url(__FILE__) . 'live2d/js/live2d-ctrl.js', array('pixi-live2d-display', 'poilive2d-message'), null, true);                
         
         wp_enqueue_script('live2d-run', LIVE2D_URL . '/live2d/js/run_local.js', array('live2d-jquery'), LIVE2D_VERSION, true);
     }
@@ -38,18 +43,41 @@ function live2d_head()
         $live2d_model_dir = LIVE2D_PATH . '/live2d/model/';
         $models_info = array();
         $model_dirs = glob($live2d_model_dir . '*', GLOB_ONLYDIR);
+        
         foreach ($model_dirs as $dir) {
-            $m_name = basename($dir);
-            // 只扫描数字命名的 png 作为衣服
-            $textures = glob($dir . '/textures/*.png');
-            $valid_tex_count = 0;
-            foreach ($textures as $tex) {
-                if (is_numeric(basename($tex, '.png'))) {
-                    $valid_tex_count++;
-                }
+            $m_name = basename($dir); // 文件夹名，作为前端播报的名称
+            
+            // 1. 判断是否为新版 V3/V4 模型 (*.model3.json)
+            $v3_models = glob($dir . '/*.model3.json');
+            if (count($v3_models) > 0) {
+                // 新版模型：直接存入 json 文件名
+                $models_info[$m_name] = basename($v3_models[0]); 
+                continue; 
             }
-            if ($valid_tex_count > 0) {
-                $models_info[$m_name] = $valid_tex_count;
+
+            // 2. 寻找老版 V2 模型的主配置文件 (支持 model.json 或 任意前缀的 *model.json)
+            $v2_models = glob($dir . '/*model.json');
+            if (count($v2_models) > 0) {
+                $v2_json_name = basename($v2_models[0]); // 获取找到的第一个 V2 json 文件名
+
+                // 统计该模型下的纯数字贴图数量 (用于判断是否有换装)
+                $textures = glob($dir . '/textures/*.png');
+                $valid_tex_count = 0;
+                foreach ($textures as $tex) {
+                    if (is_numeric(basename($tex, '.png'))) {
+                        $valid_tex_count++;
+                    }
+                }
+
+                // 【核心优化】：如果这个老模型只有 1 件衣服，或者干脆没有数字命名的贴图
+                if ($valid_tex_count <= 1) {
+                    // 把它伪装成新版模型！直接把文件名字符串传给前端
+                    // 前端 JS 看到字符串，会直接绕过 API，丝滑加载这个 json
+                    $models_info[$m_name] = $v2_json_name;
+                } else {
+                    // 如果有多件衣服，必须走老路子，传衣服数量给前端，让 model-api.php 负责动态换装
+                    $models_info[$m_name] = $valid_tex_count;
+                }
             }
         }
 

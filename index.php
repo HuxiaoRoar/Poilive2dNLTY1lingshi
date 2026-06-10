@@ -1,6 +1,6 @@
 <?php
 /*
-Plugin Name:新·洛天依Live2D
+Plugin Name:新新·洛天依Live2D
 Plugin URI: http://www.luotianyi.blue/2023-06/new·luotianyi-live2d.html
 Description: 在你的博客里添加一个V4洛天依！基于众人插件修改而来，详情内容请看插件主页。
 Version: 1.7.12

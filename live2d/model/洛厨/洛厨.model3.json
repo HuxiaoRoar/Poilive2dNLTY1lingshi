@@ -1,0 +1,46 @@
+{
+	"Version": 3,
+	"FileReferences": {
+		"Moc": "洛厨.moc3",
+		"Textures": [
+			"洛厨.4096/texture_00.png",
+			"洛厨.4096/texture_01.png"
+		],
+		"Physics": "洛厨.physics3.json",
+		"DisplayInfo": "洛厨.cdi3.json",
+		"Expressions": [
+			{
+				"Name": "星星眼",
+				"File": "star.exp3.json"
+			},
+			{
+				"Name": "哭泣",
+				"File": "cry.exp3.json"
+			},
+			{
+				"Name": "抱娃",
+				"File": "hand.exp3.json"
+			},
+			{
+				"Name": "重置",
+				"File": "reset.exp3.json"
+			}
+		]
+	},
+	"Groups": [
+		{
+			"Target": "Parameter",
+			"Name": "LipSync",
+			"Ids": []
+		},
+		{
+			"Target": "Parameter",
+			"Name": "EyeBlink",
+			"Ids": [
+				"ParamEyeROpen",
+				"ParamEyeLOpen"
+			]
+		}
+	],
+	"HitAreas": []
+}
