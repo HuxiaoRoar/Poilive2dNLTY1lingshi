@@ -188,6 +188,102 @@
 }
 
 
+/* ==========================================
+   VTubeStudio 独立对话框 UI (Flat 2.0 暗色主题)
+   ========================================== */
+
+/* 1. 弹窗主面板 */
+#vts-dialog {
+    display: none;
+    /* 默认隐藏，由 jQuery 动画接管显示/隐藏 */
+    position: absolute;
+    bottom: 5px;
+    left: 0px;
+    right: 0px;
+    background: rgba(20, 25, 30, 0.6);
+    border: 1px solid rgba(102, 204, 255, 0.5) !important;
+    border-radius: 12px;
+    padding: 15px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4), 0 0 10px rgba(102, 204, 255, 0.2);
+    z-index: 100;
+    pointer-events: auto;
+    -webkit-backdrop-filter: blur(4px);
+    backdrop-filter: blur(4px);
+    /* 兼容 Safari */
+}
+
+/* 2. 文本显示区 */
+#vts-text {
+    font-size: 15px;
+    color: #f4f6f8;
+    margin-bottom: 0px;
+    text-align: center;
+    font-weight: bold;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
+}
+
+/* 3. 按钮容器列 */
+#vts-choices {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+
+#vts-choices:not(:empty) {
+    margin-top: 12px;	
+}
+
+/* 4. Flat 2.0 现代扁平化按钮 (常态) */
+.vts-btn {
+    padding: 8px 12px !important;
+    background: rgba(45, 50, 55, 0.4) !important;
+    border: 1px solid rgba(102, 204, 255, 0.2) !important;
+    border-radius: 6px !important;
+    color: #f4f6f8 !important;
+    font-size: 14px !important;
+    font-weight: normal !important;
+    letter-spacing: 0.5px !important;
+    cursor: pointer !important;
+    text-align: center !important;
+    outline: none !important;
+    margin: 0 !important;
+    display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        line-height: 1 !important;
+    /* 核心过渡动画：涵盖颜色、阴影和位移的平滑演算 */
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1) !important;
+    /* 仅保留极其微弱的外部物理投影，消除拟物感 */
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2) !important;
+}
+
+/* 5. 按钮悬停交互 (Hover: 微抬起 + 色彩透出) */
+.vts-btn:hover {
+    background: rgba(102, 204, 255, 0.2) !important;
+    border-color: rgba(102, 204, 255, 0.6) !important;
+    color: #ffffff !important;
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.4), 0 0 8px rgba(102, 204, 255, 0.15) !important;
+    transform: translateY(-2px) !important;
+    /* Z轴悬浮 */
+}
+
+/* 6. 按钮点击交互 (Active: 贴合归位) */
+.vts-btn:active {
+    transform: translateY(0) !important;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2) !important;
+    background: rgba(102, 204, 255, 0.2) !important;
+}
+
+
+
+
+
+
+
+
+
+
 
 @keyframes shake {
     2% {

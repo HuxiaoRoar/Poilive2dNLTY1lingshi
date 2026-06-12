@@ -31,16 +31,18 @@ function resolveInitialState() {
 
     var maxTex = modelTexturesMax[currentModel];
 
-    // 【修改点 1】：如果是新版模型 (-1)，跳过随机计算，固定衣服 ID 为 1
-    if (typeof maxTex === 'string') {
+    // 核心转换：统一算出到底有几套衣服
+    var maxCount = Array.isArray(maxTex) ? maxTex.length : (typeof maxTex === 'number' ? maxTex : 1);
+
+    if (maxCount <= 1) {
         currentTexId = 1;
     } else {
         var texKey = 'live2d_tex_' + currentModel;
         var savedTexId = localStorage.getItem(texKey);
-        if (poilive2d_config.texture_record === '1' && savedTexId !== null && parseInt(savedTexId) <= maxTex) {
+        if (poilive2d_config.texture_record === '1' && savedTexId !== null && parseInt(savedTexId) <= maxCount) {
             currentTexId = parseInt(savedTexId);
         } else {
-            currentTexId = Math.floor(Math.random() * maxTex) + 1;
+            currentTexId = Math.floor(Math.random() * maxCount) + 1;
             if (poilive2d_config.texture_record === '1') {
                 localStorage.setItem(texKey, currentTexId);
             }
@@ -130,6 +132,8 @@ function initLive2d() {
         // ==========================================
         $('#change-button').off('click').on('click', () => {
             if (window.isModelLoading) return;
+            window.isModelLoading = true;
+
             var realIdx = theModel.indexOf(currentModel);
             if (realIdx === -1) realIdx = 0;
 
@@ -148,14 +152,16 @@ function initLive2d() {
             var texKey = 'live2d_tex_' + currentModel;
             var savedTexId = localStorage.getItem(texKey);
 
-            // 【修改点 2】：兼容新模型的贴图计算
-            if (typeof maxTex === 'string') {
+            // 核心转换
+            var maxCount = Array.isArray(maxTex) ? maxTex.length : (typeof maxTex === 'number' ? maxTex : 1);
+
+            if (maxCount <= 1) {
                 currentTexId = 1;
             } else {
-                if (poilive2d_config.texture_record === '1' && savedTexId !== null && parseInt(savedTexId) <= maxTex) {
+                if (poilive2d_config.texture_record === '1' && savedTexId !== null && parseInt(savedTexId) <= maxCount) {
                     currentTexId = parseInt(savedTexId);
                 } else {
-                    currentTexId = Math.floor(Math.random() * maxTex) + 1;
+                    currentTexId = Math.floor(Math.random() * maxCount) + 1;
                     if (poilive2d_config.texture_record === '1') localStorage.setItem(texKey, currentTexId);
                 }
             }
@@ -173,9 +179,14 @@ function initLive2d() {
         // ==========================================
         $('#switch-button').off('click').on('click', () => {
             if (window.isModelLoading) return;
-            var maxTex = modelTexturesMax[currentModel];            
-            if (typeof maxTex === 'string') {
-                showMessage("当前高清模型暂不支持一键变装哦！", 4000);
+            window.isModelLoading = true;
+
+            var maxTex = modelTexturesMax[currentModel];
+            // 核心转换
+            var maxCount = Array.isArray(maxTex) ? maxTex.length : (typeof maxTex === 'number' ? maxTex : 1);
+
+            if (maxCount <= 1) {
+                showMessage("当前模型只有一套衣服，无法变装哦！", 4000);
                 return; // 直接中止，啥也不干
             }
 
@@ -184,11 +195,11 @@ function initLive2d() {
             if (poilive2d_config.switch_texture === 'random') {
                 var nextTex;
                 do {
-                    nextTex = Math.floor(Math.random() * maxTex) + 1;
-                } while (nextTex === currentTexId && maxTex > 1);
+                    nextTex = Math.floor(Math.random() * maxCount) + 1;
+                } while (nextTex === currentTexId && maxCount > 1);
                 currentTexId = nextTex;
             } else {
-                currentTexId = (currentTexId % maxTex) + 1;
+                currentTexId = (currentTexId % maxCount) + 1;
             }
 
             if (poilive2d_config.texture_record === '1') {

@@ -49,9 +49,20 @@ function live2d_head()
             
             // 1. 判断是否为新版 V3/V4 模型 (*.model3.json)
             $v3_models = glob($dir . '/*.model3.json');
-            if (count($v3_models) > 0) {
-                // 新版模型：直接存入 json 文件名
-                $models_info[$m_name] = basename($v3_models[0]); 
+            $v3_count = count($v3_models);
+            
+            if ($v3_count > 0) {
+                if ($v3_count === 1) {
+                    // 只有一个文件：保持极速直连模式，直接存入字符串
+                    $models_info[$m_name] = basename($v3_models[0]); 
+                } else {
+                    // 有多个文件（多模型换装）：遍历所有的 json 并存入数组
+                    $v3_array = array();
+                    foreach ($v3_models as $v3_file) {
+                        $v3_array[] = basename($v3_file); // 压入数组，如 ["model0.model3.json", "model1.model3.json"]
+                    }
+                    $models_info[$m_name] = $v3_array;
+                }
                 continue; 
             }
 
