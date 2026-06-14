@@ -173,119 +173,96 @@ function InitPoi() {
             }
         });
         // ==========================================
-        // ★ 核心解释器 (全格式通吃版)
+        // ★ 核心解释器 (多任务并发 + 独立UI保护版)
         // ==========================================
         const rawJson = model.internalModel.settings.json || model.internalModel.settings;
 
-        // 1. 暴力兼容大小写与层级结构
         const rawMotions = rawJson.FileReferences?.Motions || rawJson.FileReferences?.motions || rawJson.Motions || rawJson.motions || {};
         const rawHitAreas = rawJson.HitAreas || rawJson.hit_areas || [];
         const rawExpressions = rawJson.FileReferences?.Expressions || rawJson.FileReferences?.expressions || rawJson.Expressions || rawJson.expressions || [];
 
         let vtsTimeout = null;
 
-        function executeVTSAction(groupName, specificName = null) {
+        // 新增 isTopLevel 参数：只有最顶层的用户点击，才有资格重置/隐藏当前界面的旧气泡
+        function executeVTSAction(groupName, specificName = null, isTopLevel = false) {
             if (!groupName) return;
 
-            const engineGroup = model.internalModel.motionManager.motionGroups[groupName];
+            const engineGroup = model.internalModel.motionManager?.motionGroups[groupName];
             const motionsInGroup = rawMotions[groupName] || [];
 
             let finalIndex = specificName ? motionsInGroup.findIndex(m => (m.Name || m.name) === specificName) : -1;
 
             if (finalIndex === -1 && (motionsInGroup.length > 0 || engineGroup)) {
                 const maxLen = Math.max(motionsInGroup.length, engineGroup ? engineGroup.length : 0);
-                finalIndex = Math.floor(Math.random() * maxLen);
+                if (maxLen > 0) finalIndex = Math.floor(Math.random() * maxLen);
             }
 
             if (finalIndex === -1) return;
 
             const motionDef = motionsInGroup[finalIndex] || {};
 
-            // 提取属性 (全盘兼容帕斯卡命名与蛇形命名)
             const mFile = motionDef.File || motionDef.file;
             const mExp = motionDef.Expression || motionDef.expression;
             const mCmd = motionDef.Command || motionDef.command;
             const mText = motionDef.Text || motionDef.text;
             const mChoices = motionDef.Choices || motionDef.choices;
+            const mSound = motionDef.Sound || motionDef.sound;
 
-            // --- A. 播放动作与音频 ---
+            // --- A. 播放动作与引擎内嵌音频 ---
             if (engineGroup && mFile) {
                 model.motion(groupName, finalIndex);
-            } else if (!mFile && !mCmd) {
-                console.log(`💬 指令 [${groupName}] 为纯对话/虚拟指令，已拦截。`);
+            } else if (!mFile && !mCmd && !mSound) {
+                console.log(`💬 指令 [${groupName}] 无核心动作配置，已安全放行。`);
             }
 
-            // --- B. 切换表情 ---
+            // --- ★ B. 脱离骨骼的纯语音兜底播放 (防 # 号截断) ---
+            if (!mFile && mSound) {
+                const safeSoundPath = mSound.split('/').map(p => encodeURIComponent(p)).join('/');
+                const audioUrl = message_Path + "model/" + encodeURIComponent(currentModel) + "/" + safeSoundPath;
+                const audio = new Audio(audioUrl);
+                audio.play().catch(e => console.warn("浏览器拦截了纯语音播报 (需用户先产生一次交互):", e));
+            }
+
+            // --- C. 切换表情 ---
             if (mExp) {
                 const expIndex = rawExpressions.findIndex(e => (e.Name || e.name) === mExp);
                 if (expIndex !== -1) model.expression(expIndex);
             }
 
-            // --- C. 执行系统命令 (★点击变装核心逻辑★) ---
-            if (mCmd) {
-                if (mCmd.includes('open_url')) {
-                    window.open(mCmd.replace('open_url', '').trim(), '_blank');
-                } else if (mCmd.includes('change_cos')) {
-                    const targetJson = mCmd.replace('change_cos', '').trim();
-                    console.log("✨ 触发模型内部点击变装 -> 目标文件:", targetJson);
-
-                    if (window.isModelLoading) return;
-
-                    // 获取当前模型的数组列表并进行匹配
-                    var maxTex = modelTexturesMax[currentModel];
-                    if (Array.isArray(maxTex)) {
-                        var targetIndex = maxTex.indexOf(targetJson);
-                        if (targetIndex !== -1) {
-                            // 匹配成功！更新当前衣服的全局 ID (因为数组从0开始，ID从1开始，所以+1)
-                            currentTexId = targetIndex + 1;
-                            if (poilive2d_config.texture_record === '1') {
-                                localStorage.setItem('live2d_tex_' + currentModel, currentTexId);
-                            }
-
-                            // 触发变装重载动画
-                            $("#live2d").stop().animate({ opacity: '0' }, 200, function () {
-                                InitPoi();
-                            });
-                        } else {
-                            console.warn("未在配置文件数组中找到目标变装文件:", targetJson);
-                        }
-                    }
-                    return; // 既然要销毁重载了，直接 return 阻断后续 UI 气泡的渲染
-                }
-            }
-
-            // --- D. 独立 UI 面板联动 ---
+            // --- D. 独立 UI 与连环选项路由 (保护机制) ---
             const $dialog = $('#vts-dialog');
             const $text = $('#vts-text');
-            const $choices = $('#vts-choices').empty();
+            const $choices = $('#vts-choices');
 
             const hasText = !!mText;
             const hasChoices = mChoices && mChoices.length > 0;
 
-            if (hasText) $text.text(mText).show();
-            else $text.hide();
-
-            if (hasChoices) {
-                mChoices.forEach(choice => {
-                    const cText = choice.Text || choice.text;
-                    const cNext = choice.NextMtn || choice.next_mtn;
-
-                    $('<button class="vts-btn"></button>')
-                        .text(cText)
-                        .on('click', function () {
-                            $dialog.fadeOut(200);
-                            if (cNext) {
-                                const [nextGroup, nextSpecific] = cNext.split(':');
-                                executeVTSAction(nextGroup, nextSpecific);
-                            }
-                        }).appendTo($choices);
-                });
-            }
-
-            if (vtsTimeout) clearTimeout(vtsTimeout);
-
             if (hasText || hasChoices) {
-                if (!hasChoices) $dialog.css('bottom', '15px');
+                $choices.empty();
+                if (hasText) $text.text(mText).show();
+                else $text.hide();
+
+                if (hasChoices) {
+                    mChoices.forEach(choice => {
+                        const cText = choice.Text || choice.text;
+                        const cNext = choice.NextMtn || choice.next_mtn;
+
+                        $('<button class="vts-btn"></button>')
+                            .text(cText)
+                            .on('click', function () {
+                                $dialog.fadeOut(200);
+                                if (cNext) {
+                                    const [nextGroup, nextSpecific] = cNext.split(':');
+                                    // 用户点击了选项卡，等同于一次新的顶级交互
+                                    executeVTSAction(nextGroup, nextSpecific, true);
+                                }
+                            }).appendTo($choices);
+                    });
+                }
+
+                if (vtsTimeout) clearTimeout(vtsTimeout);
+
+                if (!hasChoices) $dialog.css('bottom', '40px');
                 else $dialog.css('bottom', '5px');
 
                 const delay = motionDef.TextDelay || motionDef.text_delay || 0;
@@ -297,20 +274,72 @@ function InitPoi() {
                         vtsTimeout = setTimeout(() => { $dialog.fadeOut(300); }, duration);
                     }
                 }, delay);
-            } else {
+
+            } else if (isTopLevel) {
                 $dialog.fadeOut(200);
+            }
+
+            // --- E. 多线程并发命令解析 (放在 UI 之后，防止父级截断子级的 UI) ---
+            if (mCmd) {
+                const commands = mCmd.split(';');
+                commands.forEach(cmdStr => {
+                    const cmd = cmdStr.trim();
+                    if (!cmd) return;
+
+                    if (cmd.startsWith('start_mtn')) {
+                        const target = cmd.replace('start_mtn', '').trim();
+                        const [nextGroup, nextSpecific] = target.split(':');
+                        if (nextGroup) {
+                            // 递归子任务 (isTopLevel 设为 false，不清理 UI)
+                            executeVTSAction(nextGroup, nextSpecific, false);
+                        }
+                    } else if (cmd.startsWith('change_cos')) {
+                        const targetJson = cmd.replace('change_cos', '').trim();
+                        if (window.isModelLoading) return;
+                        var maxTex = modelTexturesMax[currentModel];
+                        if (Array.isArray(maxTex)) {
+                            var targetIndex = maxTex.indexOf(targetJson);
+                            if (targetIndex !== -1) {
+                                currentTexId = targetIndex + 1;
+                                if (poilive2d_config.texture_record === '1') {
+                                    localStorage.setItem('live2d_tex_' + currentModel, currentTexId);
+                                }
+                                $("#live2d").stop().animate({ opacity: '0' }, 200, function () { InitPoi(); });
+                            }
+                        }
+                    } else if (cmd.startsWith('open_url')) {
+                        const url = cmd.replace('open_url', '').trim();
+                        if (url) window.open(url, '_blank');
+                    }
+                });
+            }
+
+            // --- F. json 中独立的 next_mtn 链式调用 ---
+            const mNextMtn = motionDef.NextMtn || motionDef.next_mtn;
+            if (mNextMtn) {
+                const [nextGroup, nextSpecific] = mNextMtn.split(':');
+                if (nextGroup) executeVTSAction(nextGroup, nextSpecific, false);
             }
         }
 
         // ==========================================
-        // 射线碰撞探测入口 (支持前缀模糊匹配)
+        // 射线碰撞探测入口 (融合 Z轴排序 与 极致寻路强化)
         // ==========================================
         model.on('hit', (hitAreas) => {
             if (!hitAreas.length) return;
-            const hitArea = hitAreas[0]; // 例如 "BACK_RIBBON_01"
 
-            // 兼容 id 匹配和 name 匹配
-            const hitConfig = rawHitAreas.find(h => (h.Name === hitArea || h.name === hitArea) || (h.Id === hitArea || h.id === hitArea));
+            // 1. Z轴高度排序 (解决重叠问题)
+            let matchedAreas = hitAreas.map(hitArea => {
+                const config = rawHitAreas.find(h => (h.Name === hitArea || h.name === hitArea) || (h.Id === hitArea || h.id === hitArea));
+                const order = config ? (config.Order || config.order || 0) : 0;
+                return { hitArea, config, order };
+            });
+
+            matchedAreas.sort((a, b) => b.order - a.order);
+            const topmost = matchedAreas[0];
+
+            const hitConfig = topmost.config;
+            const hitArea = topmost.hitArea;
 
             let group = null;
             let specific = null;
@@ -318,23 +347,32 @@ function InitPoi() {
             if (hitConfig && (hitConfig.Motion || hitConfig.motion)) {
                 [group, specific] = (hitConfig.Motion || hitConfig.motion).split(':');
             } else {
-                // 如果没有直接写明 Motion，根据常规引擎习惯去推测动作组名
-                // 获取 JSON 中配置的名字，如果没有名字（如 ""），则使用引擎抛出的原始 hitArea
-                const areaName = hitConfig ? (hitConfig.Name || hitConfig.name || "") : hitArea;
+                // 【核心修复】：使用 ?? 代替 ||，完美保护空字符串 "" 不被丢弃
+                const areaId = hitConfig?.Id ?? hitConfig?.id ?? hitArea;
+                const areaName = hitConfig?.Name ?? hitConfig?.name ?? hitArea;
 
-                // 遍历尝试市面上所有常见的动作前缀
-                const prefixes = ["Tap", "tap_", "Tap_", "tap"];
-                for (const prefix of prefixes) {
-                    if (rawMotions[prefix + areaName] || rawMotions[prefix + hitArea]) {
-                        group = rawMotions[prefix + areaName] ? (prefix + areaName) : (prefix + hitArea);
-                        break;
+                // 去重，合并所有可能的名称和 ID。
+                // 【核心修复】：删除了之前的 .filter(Boolean)，因为对这个模型来说，空字符串也是合法的钥匙！
+                const searchKeys = [...new Set([areaName, areaId, hitArea])];
+                const prefixes = ["tap_", "Tap_", "Tap", "tap", ""];
+
+                for (const key of searchKeys) {
+                    if (key === null || key === undefined) continue;
+                    for (const prefix of prefixes) {
+                        if (rawMotions[prefix + key]) {
+                            group = prefix + key;
+                            break;
+                        }
                     }
+                    if (group) break;
                 }
             }
 
-            if (group) executeVTSAction(group, specific);
+            if (group) {
+                console.log(`🎯 触发指令路由 -> 组: ${group} (优先级: ${topmost.order})`);
+                executeVTSAction(group, specific, true);
+            }
         });
-
 
         // G. 动画淡入与控制台提示
         if (isFirstLoad) {
