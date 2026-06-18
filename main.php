@@ -43,9 +43,12 @@ function live2d_head()
         $live2d_model_dir = LIVE2D_PATH . '/live2d/model/';
         $models_info = array();
         $model_dirs = glob($live2d_model_dir . '*', GLOB_ONLYDIR);
+
+        require_once plugin_dir_path(__FILE__) . 'live2d/live2d-optimizer.php';
         
         foreach ($model_dirs as $dir) {
             $m_name = basename($dir); // 文件夹名，作为前端播报的名称
+            poilive2d_optimize_model_motions($dir, $m_name);
             
             // 1. 判断是否为新版 V3/V4 模型 (*.model3.json)
             $v3_models = glob($dir . '/*.model3.json');

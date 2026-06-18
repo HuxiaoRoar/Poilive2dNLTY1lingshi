@@ -275,32 +275,91 @@ function initLive2d() {
     var dragRelease = poilive2d_config.drag_release || 'restore';
     var landlordDom = document.getElementById('landlord');
 
-    if (dragMode !== 'disable' && landlordDom) {
-        var isDragging = false, startX, startY, initialX, initialY;
-        landlordDom.addEventListener('mousedown', function (e) {
-            if (e.target.closest('.l2d-menu') || e.target.classList.contains('l2d-action')) return;
-            isDragging = true; startX = e.clientX; startY = e.clientY; initialX = landlordDom.offsetLeft; initialY = landlordDom.offsetTop;
-            landlordDom.style.setProperty('transition', 'none', 'important');
-        });
-        document.addEventListener('mousemove', function (e) {
-            if (!isDragging) return;
-            var dx = e.clientX - startX, dy = e.clientY - startY;
-            if (dragMode === 'horizontal' || dragMode === 'free') {
-                landlordDom.style.setProperty('left', (initialX + dx) + 'px', 'important'); landlordDom.style.setProperty('right', 'auto', 'important');
-            }
-            if (dragMode === 'free') {
-                landlordDom.style.setProperty('top', (initialY + dy) + 'px', 'important'); landlordDom.style.setProperty('bottom', 'auto', 'important');
-            }
-        });
-        document.addEventListener('mouseup', function () {
-            if (!isDragging) return;
-            isDragging = false;
-            landlordDom.style.setProperty('transition', 'all .3s ease-in-out', 'important');
-            if (dragRelease === 'restore') {
-                landlordDom.style.removeProperty('top'); landlordDom.style.removeProperty('left');
-                landlordDom.style.removeProperty('right'); landlordDom.style.removeProperty('bottom');
-            }
-        });
+    if (landlordDom) {
+        // ==========================================
+        // 1. 动态生成专属拖拽手柄 (物理隔离的载体)
+        // ==========================================
+        var dragHandle = document.createElement('div');
+        dragHandle.id = 'poi-drag-handle';
+        dragHandle.className = 'l2d-action'; // 复用你的按钮样式 (背景、高斯模糊等)
+
+        // 为了美观，给手柄加一点基础内联排版（可根据你的实际菜单结构调整）
+        dragHandle.style.cssText = 'display: flex; align-items: center; justify-content: center; user-select: none; font-size: 16px; margin-bottom: 5px;';
+
+        // ==========================================
+        // 2. 根据拖拽模式，赋予不同的图标和鼠标指针
+        // ==========================================
+        if (dragMode === 'free') {
+            dragHandle.innerHTML = '<span>✥</span>'; // 十字方向标
+            dragHandle.style.cursor = 'move';
+            dragHandle.title = "按住自由拖动";
+        } else if (dragMode === 'horizontal') {
+            dragHandle.innerHTML = '<span>↔</span>'; // 左右水平标
+            dragHandle.style.cursor = 'ew-resize';
+            dragHandle.title = "按住水平拖动";
+        } else {
+            dragHandle.innerHTML = '<span>🔒</span>'; // 锁头
+            dragHandle.style.cursor = 'not-allowed';
+            dragHandle.title = "位置已锁定";
+        }
+
+        // 将手柄挂载到页面上。如果你有 .l2d-menu 菜单容器，就塞进菜单里；否则直接丢进 landlord
+        var menuContainer = landlordDom.querySelector('.l2d-menu');
+        if (menuContainer) {
+            menuContainer.insertBefore(dragHandle, menuContainer.firstChild); // 放在菜单最上面
+        } else {
+            // 如果没有独立菜单容器，强制绝对定位在左上角附近
+            dragHandle.style.position = 'absolute';
+            dragHandle.style.top = '10px';
+            dragHandle.style.left = '-35px';
+            landlordDom.appendChild(dragHandle);
+        }
+
+        // ==========================================
+        // 3. 只有非 disable 状态，才挂载拖拽核心事件
+        // ==========================================
+        if (dragMode !== 'disable') {
+            var isDraggingDiv = false, startX, startY, initialX, initialY;
+
+            // 【核心防御】：事件只绑定在 dragHandle 上，模型身体彻底解放！
+            dragHandle.addEventListener('mousedown', function (e) {
+                if (e.button !== 0) return; // 仅限鼠标左键
+                isDraggingDiv = true;
+                startX = e.clientX;
+                startY = e.clientY;
+                initialX = landlordDom.offsetLeft;
+                initialY = landlordDom.offsetTop;
+                landlordDom.style.setProperty('transition', 'none', 'important');
+                e.preventDefault(); // 阻止手柄上的文字被意外选中
+            });
+
+            // 移动和松开事件依然绑定在 document 上，保证拖动时鼠标滑出范围也不会断
+            document.addEventListener('mousemove', function (e) {
+                if (!isDraggingDiv) return;
+                var dx = e.clientX - startX, dy = e.clientY - startY;
+
+                if (dragMode === 'horizontal' || dragMode === 'free') {
+                    landlordDom.style.setProperty('left', (initialX + dx) + 'px', 'important');
+                    landlordDom.style.setProperty('right', 'auto', 'important');
+                }
+                if (dragMode === 'free') {
+                    landlordDom.style.setProperty('top', (initialY + dy) + 'px', 'important');
+                    landlordDom.style.setProperty('bottom', 'auto', 'important');
+                }
+            });
+
+            document.addEventListener('mouseup', function () {
+                if (!isDraggingDiv) return;
+                isDraggingDiv = false;
+                landlordDom.style.setProperty('transition', 'all .3s ease-in-out', 'important');
+                if (dragRelease === 'restore') {
+                    landlordDom.style.removeProperty('top');
+                    landlordDom.style.removeProperty('left');
+                    landlordDom.style.removeProperty('right');
+                    landlordDom.style.removeProperty('bottom');
+                }
+            });
+        }
     }
 }
 initLive2d();
