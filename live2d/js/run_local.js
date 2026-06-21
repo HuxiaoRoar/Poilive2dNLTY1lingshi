@@ -170,6 +170,7 @@ function InitPoi() {
         //         currentLive2dModel.focus(event.data.global.x, event.data.global.y);
         //     }
         // });
+        TODO:
         // ==========================================
         // ★ F. 核心重构：电竞级鼠标视线跟随 (彻底解决原版阻尼漂移)
         // ==========================================
@@ -215,6 +216,66 @@ function InitPoi() {
         // 赋个初始值，防止第一次 update 拿到 undefined
         model.poiCurrentX = 0;
         model.poiCurrentY = 0;
+        if (model.internalModel.focusController) {
+            model.internalModel.focusController.update = function (dt) {
+                const coreModel = model.internalModel.coreModel;
+
+                // 1. 双轴平滑插值运算 (0.4 响应非常跟手)
+                const TRACKING_SPEED = 0.4;
+                currentEyeX += (targetEyeX - currentEyeX) * TRACKING_SPEED;
+                currentEyeY += (targetEyeY - currentEyeY) * TRACKING_SPEED;
+
+                // 快捷工具函数
+                const setParam = (id, val) => {
+                    if (coreModel.setParameterValueById) coreModel.setParameterValueById(id, val);
+                    else if (coreModel.setParamFloat) coreModel.setParamFloat(id, val);
+                };
+                const getParam = (id) => {
+                    if (coreModel.getParameterValueById) return coreModel.getParameterValueById(id) || 0;
+                    else if (coreModel.getParamFloat) return coreModel.getParamFloat(id) || 0;
+                    return 0;
+                };
+
+                // 2. 【智能呼吸融合算法】
+                // 此时 getParam 拿到的是这一帧基础呼吸动作刚刚写入的值。
+                // 我们让鼠标作为绝对主导，叠加上呼吸的微弱震荡。同时在边界进行绝对硬钳制，杜绝往回跳。
+                let finalAngleX = (currentEyeX * 30) + (getParam('ParamAngleX') * 0.15);
+                let finalAngleY = (currentEyeY * 30) + (getParam('ParamAngleY') * 0.15);
+
+                // 边界硬钳制 (头转限制在 -30 到 30)
+                finalAngleX = Math.max(-30, Math.min(30, finalAngleX));
+                finalAngleY = Math.max(-30, Math.min(30, finalAngleY));
+
+                // 眼球限制在 -1 到 1
+                let finalEyeX = Math.max(-1, Math.min(1, currentEyeX));
+                let finalEyeY = Math.max(-1, Math.min(1, currentEyeY));
+
+                // 绝对写入底层 WebGL 缓冲区
+                setParam('ParamAngleX', finalAngleX);
+                setParam('ParamAngleY', finalAngleY);
+                setParam('ParamEyeBallX', finalEyeX);
+                setParam('ParamEyeBallY', finalEyeY);
+                setParam('ParamBodyAngleX', currentEyeX * 10); // 身体微晃
+
+                // 3. 【全轴受控打印系统】(按键 1 开启，按键 2 关闭)
+                if (window._poiDebugLoggingEnabled) {
+                    if (!window._poiLastLogTime) window._poiLastLogTime = 0;
+                    const now = performance.now();
+
+                    // 将打印节流放缓至 150ms，彻底释放主线程性能，消除卡顿
+                    if (now - window._poiLastLogTime > 150) {
+                        console.log(
+                            `%c[POI 双轴调试台]`, "color: #0099cc; font-weight: bold;",
+                            `\n ━ X轴方向 ━ 目标X: ${targetEyeX.toFixed(3)} | 当前X: ${currentEyeX.toFixed(3)} | 头转X(AngleX): ${finalAngleX.toFixed(2)} | 眼球X: ${finalEyeX.toFixed(2)}` +
+                            `\n ━ Y轴方向 ━ 目标Y: ${targetEyeY.toFixed(3)} | 当前Y: ${currentEyeY.toFixed(3)} | 头转Y(AngleY): ${finalAngleY.toFixed(2)} | 眼球Y: ${finalEyeY.toFixed(2)}` +
+                            `\n ━ 边缘物理 ━ 发丝摆动(HairFront): ${getParam('ParamHairFront').toFixed(3)}`
+                        );
+                        window._poiLastLogTime = now;
+                    }
+                }
+            };
+        }
+
 
         // ==========================================
         // ★ 核心解释器 (多任务并发 + 独立UI保护版)
@@ -553,27 +614,37 @@ function InitPoi() {
 
         model.on('pointerup', handlePointerUp);
         model.on('pointerupoutside', handlePointerUp);
+        TODO:
+        // ==========================================
+        // ★ 独立调试台开关 (按键 1 开启，按键 2 关闭)
+        // ==========================================
+        window._poiDebugLoggingEnabled = false; // 默认关闭
+
+        window.addEventListener('keydown', (e) => {
+            // 确保用户不是在输入框里打字
+            if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+
+            if (e.key === '1') {
+                window._poiDebugLoggingEnabled = true;
+                console.log("%c[PoiDebug] 🟢 视线追踪调试打印：已开启！", "color: white; background: #34a853; padding: 2px 6px; border-radius: 4px; font-weight: bold;");
+            } else if (e.key === '2') {
+                window._poiDebugLoggingEnabled = false;
+                console.log("%c[PoiDebug] 🔴 视线追踪调试打印：已关闭！", "color: white; background: #ea4335; padding: 2px 6px; border-radius: 4px; font-weight: bold;");
+            }else if (e.key === '3') {                
+                console.log("%c[PoiDebug] 📌 视线追踪调试打印：已标记！", "color: white; background: #fffb00; padding: 2px 6px; border-radius: 4px; font-weight: bold;");
+            }
+        });
 
         model.internalModel.on('beforeModelUpdate', () => {
 
-            // -------- [A] 视线追踪重绘部分 --------
-            const TRACKING_SPEED = 0.4;
-            currentEyeX += (targetEyeX - currentEyeX) * TRACKING_SPEED;
-            currentEyeY += (targetEyeY - currentEyeY) * TRACKING_SPEED;
 
-            if (model.internalModel.focusController) {
-                model.internalModel.focusController.focus(currentEyeX, currentEyeY, true);
-            }
 
             // -------- [B] 拖拽形变重绘部分 --------
             for (const [paramId, value] of Object.entries(forcedParamValues)) {
                 model.internalModel.coreModel.setParameterValueById(paramId, value);
             }
 
-            if (Math.random() < 0.15) {
-                console.log(`[视线追踪调试] 目标Target(X:${targetEyeX.toFixed(2)}, Y:${targetEyeY.toFixed(2)}) | 实际Current(X:${currentEyeX.toFixed(2)}, Y:${currentEyeY.toFixed(2)})`);
-            }
-
+           
         });
 
 
