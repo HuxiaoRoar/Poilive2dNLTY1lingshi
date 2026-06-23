@@ -160,123 +160,7 @@ function InitPoi() {
         model.x = (canvasWidth - modelWidth * autoScale) / 2;
         model.y = canvasHeight - (modelHeight * autoScale);
 
-        // F. 鼠标视线跟随（眼神对视）
-        // model.interactive = true;
-        // pixiApp.stage.interactive = true;
-
-        // pixiApp.stage.off('pointermove');
-        // pixiApp.stage.on('pointermove', (event) => {
-        //     if (currentLive2dModel) {
-        //         currentLive2dModel.focus(event.data.global.x, event.data.global.y);
-        //     }
-        // });
-        TODO:
-        // ==========================================
-        // ★ F. 核心重构：电竞级鼠标视线跟随 (彻底解决原版阻尼漂移)
-        // ==========================================
-        model.interactive = true;
-        pixiApp.stage.interactive = true;
-        pixiApp.stage.off('pointermove');
-
-        // 我们自己维护的眼睛坐标记忆体
-        let targetEyeX = 0;
-        let targetEyeY = 0;
-        let currentEyeX = 0;
-        let currentEyeY = 0;
-
-        if (window._poiPointerMoveHandler) {
-            window.removeEventListener('pointermove', window._poiPointerMoveHandler);
-        }
-        
-        window._poiPointerMoveHandler = (event) => {
-            if (!currentLive2dModel) return;
-
-            // 1. 获取 Canvas 元素在当前浏览器视口中的绝对位置
-            const rect = pixiApp.view.getBoundingClientRect();
-
-            // 2. 计算模型在屏幕上的“真实中心点”
-            const modelCenterX = rect.left + rect.width / 2;
-            const modelCenterY = rect.top + rect.height / 2;
-
-            // 3. 计算鼠标距离模型中心的偏移量
-            const dx = event.clientX - modelCenterX;
-            const dy = event.clientY - modelCenterY;
-
-            // 4. 全屏归一化：以屏幕宽高的一半作为最大追踪范围
-            let nx = dx / (window.innerWidth / 2);
-            let ny = -(dy / (window.innerHeight / 2)); // 保持负号，适配 L2D Y轴向上为正
-
-            targetEyeX = Math.max(-1, Math.min(1, nx));
-            targetEyeY = Math.max(-1, Math.min(1, ny));
-        };
-
-        // 将事件绑定到 window，实现鼠标离开画布依然能追踪
-        window.addEventListener('pointermove', window._poiPointerMoveHandler);
-
-        // 赋个初始值，防止第一次 update 拿到 undefined
-        model.poiCurrentX = 0;
-        model.poiCurrentY = 0;
-        if (model.internalModel.focusController) {
-            model.internalModel.focusController.update = function (dt) {
-                const coreModel = model.internalModel.coreModel;
-
-                // 1. 双轴平滑插值运算 (0.4 响应非常跟手)
-                const TRACKING_SPEED = 0.4;
-                currentEyeX += (targetEyeX - currentEyeX) * TRACKING_SPEED;
-                currentEyeY += (targetEyeY - currentEyeY) * TRACKING_SPEED;
-
-                // 快捷工具函数
-                const setParam = (id, val) => {
-                    if (coreModel.setParameterValueById) coreModel.setParameterValueById(id, val);
-                    else if (coreModel.setParamFloat) coreModel.setParamFloat(id, val);
-                };
-                const getParam = (id) => {
-                    if (coreModel.getParameterValueById) return coreModel.getParameterValueById(id) || 0;
-                    else if (coreModel.getParamFloat) return coreModel.getParamFloat(id) || 0;
-                    return 0;
-                };
-
-                // 2. 【智能呼吸融合算法】
-                // 此时 getParam 拿到的是这一帧基础呼吸动作刚刚写入的值。
-                // 我们让鼠标作为绝对主导，叠加上呼吸的微弱震荡。同时在边界进行绝对硬钳制，杜绝往回跳。
-                let finalAngleX = (currentEyeX * 30) + (getParam('ParamAngleX') * 0.15);
-                let finalAngleY = (currentEyeY * 30) + (getParam('ParamAngleY') * 0.15);
-
-                // 边界硬钳制 (头转限制在 -30 到 30)
-                finalAngleX = Math.max(-30, Math.min(30, finalAngleX));
-                finalAngleY = Math.max(-30, Math.min(30, finalAngleY));
-
-                // 眼球限制在 -1 到 1
-                let finalEyeX = Math.max(-1, Math.min(1, currentEyeX));
-                let finalEyeY = Math.max(-1, Math.min(1, currentEyeY));
-
-                // 绝对写入底层 WebGL 缓冲区
-                setParam('ParamAngleX', finalAngleX);
-                setParam('ParamAngleY', finalAngleY);
-                setParam('ParamEyeBallX', finalEyeX);
-                setParam('ParamEyeBallY', finalEyeY);
-                setParam('ParamBodyAngleX', currentEyeX * 10); // 身体微晃
-
-                // 3. 【全轴受控打印系统】(按键 1 开启，按键 2 关闭)
-                if (window._poiDebugLoggingEnabled) {
-                    if (!window._poiLastLogTime) window._poiLastLogTime = 0;
-                    const now = performance.now();
-
-                    // 将打印节流放缓至 150ms，彻底释放主线程性能，消除卡顿
-                    if (now - window._poiLastLogTime > 150) {
-                        console.log(
-                            `%c[POI 双轴调试台]`, "color: #0099cc; font-weight: bold;",
-                            `\n ━ X轴方向 ━ 目标X: ${targetEyeX.toFixed(3)} | 当前X: ${currentEyeX.toFixed(3)} | 头转X(AngleX): ${finalAngleX.toFixed(2)} | 眼球X: ${finalEyeX.toFixed(2)}` +
-                            `\n ━ Y轴方向 ━ 目标Y: ${targetEyeY.toFixed(3)} | 当前Y: ${currentEyeY.toFixed(3)} | 头转Y(AngleY): ${finalAngleY.toFixed(2)} | 眼球Y: ${finalEyeY.toFixed(2)}` +
-                            `\n ━ 边缘物理 ━ 发丝摆动(HairFront): ${getParam('ParamHairFront').toFixed(3)}`
-                        );
-                        window._poiLastLogTime = now;
-                    }
-                }
-            };
-        }
-
-
+     
         // ==========================================
         // ★ 核心解释器 (多任务并发 + 独立UI保护版)
         // ==========================================
@@ -614,40 +498,221 @@ function InitPoi() {
 
         model.on('pointerup', handlePointerUp);
         model.on('pointerupoutside', handlePointerUp);
-        TODO:
+
+        // TODO:
         // ==========================================
-        // ★ 独立调试台开关 (按键 1 开启，按键 2 关闭)
+        // ★ F. 核心重构：电竞级鼠标视线跟随 (全量完整版)
         // ==========================================
-        window._poiDebugLoggingEnabled = false; // 默认关闭
+        model.interactive = true;
+        pixiApp.stage.interactive = true;
 
-        window.addEventListener('keydown', (e) => {
-            // 确保用户不是在输入框里打字
-            if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+        // 1. 彻底阉割原生追踪器，防止它暗中捣乱
+        model.focus = () => { };
+        pixiApp.stage.off('pointermove');
 
-            if (e.key === '1') {
-                window._poiDebugLoggingEnabled = true;
-                console.log("%c[PoiDebug] 🟢 视线追踪调试打印：已开启！", "color: white; background: #34a853; padding: 2px 6px; border-radius: 4px; font-weight: bold;");
-            } else if (e.key === '2') {
-                window._poiDebugLoggingEnabled = false;
-                console.log("%c[PoiDebug] 🔴 视线追踪调试打印：已关闭！", "color: white; background: #ea4335; padding: 2px 6px; border-radius: 4px; font-weight: bold;");
-            }else if (e.key === '3') {                
-                console.log("%c[PoiDebug] 📌 视线追踪调试打印：已标记！", "color: white; background: #fffb00; padding: 2px 6px; border-radius: 4px; font-weight: bold;");
-            }
-        });
+        // 我们自己维护的眼睛坐标记忆体
+        let targetEyeX = 0;
+        let targetEyeY = 0;
+        let currentEyeX = 0;
+        let currentEyeY = 0;
 
+        // 2. 双区混合缓动算法 (计算指令)
+        if (window._poiPointerMoveHandler) {
+            window.removeEventListener('pointermove', window._poiPointerMoveHandler);
+        }
+
+        window._poiPointerMoveHandler = (event) => {
+            if (!currentLive2dModel) return;
+
+            // 缓存真实的鼠标像素坐标供快照读取
+            window._poiRealMouseX = event.clientX;
+            window._poiRealMouseY = event.clientY;
+
+            const rect = pixiApp.view.getBoundingClientRect();
+            const modelCenterX = rect.left + rect.width / 2;
+            const modelCenterY = rect.top + rect.height / 2;
+
+            const dx = event.clientX - modelCenterX;
+            const dy = event.clientY - modelCenterY;
+
+            // ==========================================
+            // 第一步：非对称边缘极值映射 (让上下左右都能达到最大值)
+            // ==========================================
+            const maxDx = dx > 0 ? (window.innerWidth - modelCenterX) : modelCenterX;
+            const maxDy = dy > 0 ? (window.innerHeight - modelCenterY) : modelCenterY;
+
+            // 安全除法，防止模型贴墙时分母为 0
+            const safeMaxDx = Math.max(1, maxDx);
+            const safeMaxDy = Math.max(1, maxDy);
+
+            // 算出原始的矩形比例 (-1.0 到 1.0)
+            const rawNx = dx / safeMaxDx;
+            const rawNy = -(dy / safeMaxDy); // Live2D Y轴向上为正
+
+            // ==========================================
+            // 第二步：手柄摇杆向量球形归一 (打破斜角双极值)
+            // ==========================================
+            // 勾股定理算出合力向量长度。如果在屏幕四角，这个值会达到 1.414
+            const mag = Math.sqrt(rawNx * rawNx + rawNy * rawNy);
+            if (mag === 0) return;
+
+            // 强行把合力长度压回 1.0 以内。
+            // 这样在对角线时，X和Y最多只能是 0.707，脖子再也不会扭断了！
+            const clampedMag = Math.min(1.0, mag);
+
+            // ==========================================
+            // 第三步：仿生视觉衰减曲线 (Ease-Out Cubic)
+            // ==========================================
+            // 魔法公式：1 - (1 - x)^3
+            // 效果：鼠标移出 20% 的距离，脑袋就转了 50%；鼠标移出最后的 80%，脑袋只转最后的 1%
+            // 完美还原“鼠标离模型越近，变化越剧烈”的物理感知
+            const easedMag = 1 - Math.pow(1 - clampedMag, 3);
+
+            // ==========================================
+            // 第四步：重新分配最终参数
+            // ==========================================
+            // (原始方向 / 原始长度) = 纯粹的方向向量
+            // 纯粹的方向向量 * 衰减后的长度 = 最终结果
+            targetEyeX = (rawNx / mag) * easedMag;
+            targetEyeY = (rawNy / mag) * easedMag;
+        };
+
+        window.addEventListener('pointermove', window._poiPointerMoveHandler);
+
+        // ==========================================
+        // 3. 渲染循环钩子 (将指令注入模型骨骼)
+        // ==========================================
         model.internalModel.on('beforeModelUpdate', () => {
 
+            // ==========================================
+            // ★ 升级 2：带有速度上限的阻尼计算
+            // ==========================================
+            // 1. 基础追踪阻尼 (建议 0.2，保证微小移动的跟手感)
+            const TRACKING_SPEED = 0.2;
+            // 2. 物理限速器 (单位：每帧允许的最大参数跨度)
+            // 0.04 意味着全扭头 (-1 到 1) 最快也需要强制花费 50 帧 (将近 1 秒) 才能转完，彻底告别甩头瞬移
+            const MAX_SPEED = 0.04;
 
+            // 第一步：计算理论上这一帧该走多远
+            let deltaX = (targetEyeX - currentEyeX) * TRACKING_SPEED;
+            let deltaY = (targetEyeY - currentEyeY) * TRACKING_SPEED;
 
-            // -------- [B] 拖拽形变重绘部分 --------
+            // 第二步：绝对限速钳制 (Clamp)
+            // 如果理论位移超过了 MAX_SPEED，强行压扁；如果没有超过，则保持原样
+            deltaX = Math.max(-MAX_SPEED, Math.min(MAX_SPEED, deltaX));
+            deltaY = Math.max(-MAX_SPEED, Math.min(MAX_SPEED, deltaY));
+
+            // 第三步：将受控的安全位移累加到当前状态上
+            currentEyeX += deltaX;
+            currentEyeY += deltaY;
+
+            if (model.internalModel.focusController) {
+                model.internalModel.focusController.focus(currentEyeX, currentEyeY, true);
+            }
+
+            // -------- [B] 拖拽形变重绘部分 (保留原逻辑不破坏拖拽交互) --------
             for (const [paramId, value] of Object.entries(forcedParamValues)) {
                 model.internalModel.coreModel.setParameterValueById(paramId, value);
             }
 
-           
+            const getSafeParam = (v3Id, v2Id) => {
+                const core = model.internalModel.coreModel;
+                if (!core) return 0;
+                // 检测是否为 Cubism 3/4 核心 (.moc3)
+                if (typeof core.getParameterValueById === 'function') {
+                    return core.getParameterValueById(v3Id) || 0;
+                }
+                // 检测是否为 Cubism 2.1 核心 (.moc)
+                if (typeof core.getParamFloat === 'function') {
+                    return core.getParamFloat(v2Id) || 0;
+                }
+                return 0;
+            };
+
+            // 提取实况 (同时传入新旧两种标准命名)
+            const aX = getSafeParam('ParamAngleX', 'PARAM_ANGLE_X');
+            const aY = getSafeParam('ParamAngleY', 'PARAM_ANGLE_Y');
+            const eX = getSafeParam('ParamEyeBallX', 'PARAM_EYE_BALL_X');
+            const eY = getSafeParam('ParamEyeBallY', 'PARAM_EYE_BALL_Y');
+
+            
+            // ★ 新增：每一帧都把最新的骨骼实况写入全局缓存，防止在其他线程读取为0
+            window._poiCachedBones = { aX, aY, eX, eY };
+
+            if (window._poiDebugLoggingEnabled) {
+                if (!window._poiLastLogTime) window._poiLastLogTime = 0;
+                const now = performance.now();
+
+                // 150毫秒连续输出
+                if (now - window._poiLastLogTime > 150) {
+                    console.log(
+                        `%c[鼠标位置] X:${window._poiRealMouseX}px, Y:${window._poiRealMouseY}px\n` +
+                        `%c[数值插值] 目标Target(X:${targetEyeX.toFixed(3)}, Y:${targetEyeY.toFixed(3)}) | 当前平滑(X:${currentEyeX.toFixed(3)}, Y:${currentEyeY.toFixed(3)})\n` +
+                        `%c[骨骼实况] 头转(AngleX:${aX.toFixed(2)}, Y:${aY.toFixed(2)}) | 眼球(EyeX:${eX.toFixed(2)}, Y:${eY.toFixed(2)})`,
+                        "color: #9b59b6;", "color: #e67e22;", "color: #2980b9;"
+                    );
+                    window._poiLastLogTime = now;
+                }
+            }
+            
         });
 
+        // 将事件绑定到 window，实现鼠标离开画布依然能追踪
+        window.addEventListener('pointermove', window._poiPointerMoveHandler);
 
+
+        TODO:
+        // ==========================================
+        // ★ POI 调试台：全局快捷键中枢
+        // ==========================================
+        window._poiDebugLoggingEnabled = false; // 1键开关状态
+
+        window.addEventListener('keydown', (e) => {
+            // 屏蔽输入框打字时的误触
+            if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+
+            switch (e.key) {
+                case '1': // 开启连续打印
+                    window._poiDebugLoggingEnabled = true;
+                    console.log("%c[PoiDebug] 🟢 实时追踪打印：已开启！", "color: white; background: #34a853; padding: 2px 6px; border-radius: 4px;");
+                    break;
+
+                case '2': // 关闭连续打印
+                    window._poiDebugLoggingEnabled = false;
+                    console.log("%c[PoiDebug] 🔴 实时追踪打印：已关闭！", "color: white; background: #ea4335; padding: 2px 6px; border-radius: 4px;");
+                    break;
+
+                case '3': // 插入视觉标记 (马克键)
+                    console.log("%c================ 📌 [标记点] ================ ", "color: white; background: #f39c12; font-size: 14px; padding: 4px;");
+                    break;
+
+                case '4': // 单次参数快照 (雷达扫描)
+                    if (!currentLive2dModel || !window._poiCachedBones) {
+                        console.log("%c[Poi快照] ❌ 模型数据尚未准备好", "color: red;");
+                        return;
+                    }
+
+                    // 直接读取渲染循环里刚写好的缓存数据
+                    const bones = window._poiCachedBones;
+                    const mX = window._poiRealMouseX || 0;
+                    const mY = window._poiRealMouseY || 0;
+
+                    console.log(
+                        `%c[📸 单次快照] \n` +
+                        `🖱️ 屏幕鼠标: X:${mX}px, Y:${mY}px\n` +
+                        `🎯 目标指令: X:${typeof targetEyeX !== 'undefined' ? targetEyeX.toFixed(3) : 'N/A'}, Y:${typeof targetEyeY !== 'undefined' ? targetEyeY.toFixed(3) : 'N/A'}\n` +
+                        `🏃 当前平滑: X:${typeof currentEyeX !== 'undefined' ? currentEyeX.toFixed(3) : 'N/A'}, Y:${typeof currentEyeY !== 'undefined' ? currentEyeY.toFixed(3) : 'N/A'}\n` +
+                        `🦴 骨骼实况: 头(X:${bones.aX.toFixed(2)}, Y:${bones.aY.toFixed(2)}) | 眼(X:${bones.eX.toFixed(2)}, Y:${bones.eY.toFixed(2)})`,
+                        "color: #8e44ad; font-weight: bold; font-size: 12px; background: #f3e5f5; padding: 6px; border-radius: 4px;"
+                    );
+                    break;
+            }
+        });
+        
+        model.internalModel.on('afterUpdate', () => {    
+
+
+        });
         function executeTapAction(hitConfig, hitArea) {
             let group = null;
             let specific = null;

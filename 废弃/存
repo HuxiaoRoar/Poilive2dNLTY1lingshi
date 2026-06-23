@@ -1,0 +1,97 @@
+window._poiPointerMoveHandler = (event) => {
+    if (!currentLive2dModel) return;
+
+    const rect = pixiApp.view.getBoundingClientRect();
+    const modelCenterX = rect.left + rect.width / 2;
+    const modelCenterY = rect.top + rect.height / 2;
+
+    const mouseX = event.clientX;
+    const mouseY = event.clientY;
+
+    const dx = mouseX - modelCenterX;
+    const dy = mouseY - modelCenterY;
+
+    // ==========================================
+    // ★ 全新：双区混合缓动算法 (Dual-Zone Easing)
+    // ==========================================
+    // 1. 定义核心视区半径（在这个圆内，四面八方灵敏度绝对统一）
+    const CORE_R_X = 400; // X轴核心半径 (像素)
+    const CORE_R_Y = 300; // Y轴核心半径 (像素)
+
+    // 2. 定义基础灵敏度（数值越大，转头越不敏感，建议略大于核心半径）
+    const BASE_S = 800;
+
+    // --- X轴计算 ---
+    const distX = Math.abs(dx);
+    const maxDX = dx > 0 ? (window.innerWidth - modelCenterX) : modelCenterX;
+    let nx = 0;
+
+    if (distX <= CORE_R_X) {
+        // 【核心区】：统一线性速率，杜绝越过中轴线时的卡顿和短边甩头
+        nx = dx / BASE_S;
+    } else {
+        // 【边缘区】：剩余距离动态映射，确保最远端能平滑到达极值
+        const coreNx = (CORE_R_X / BASE_S) * Math.sign(dx); // 核心区边界时的固有参数
+        const remainNx = Math.sign(dx) - coreNx;            // 距离极值 1.0 还剩下的参数
+        const remainDist = maxDX - CORE_R_X;                // 距离屏幕边缘还剩下的物理像素
+
+        if (remainDist > 0) {
+            // 平滑分配剩余空间
+            nx = coreNx + ((distX - CORE_R_X) / remainDist) * remainNx;
+        } else {
+            // 如果短边距离比核心区还小，直接锁定，不再强求大甩头
+            nx = coreNx;
+        }
+    }
+
+    // --- Y轴计算 ---
+    // (注：Live2D Y轴向上为正，网页向下为正，核心参数已加负号翻转)
+    const distY = Math.abs(dy);
+    const maxDY = dy > 0 ? (window.innerHeight - modelCenterY) : modelCenterY;
+    let ny = 0;
+
+    if (distY <= CORE_R_Y) {
+        ny = -(dy / BASE_S);
+    } else {
+        const coreNy = -(CORE_R_Y / BASE_S) * Math.sign(dy);
+        const remainNy = -(Math.sign(dy)) - coreNy;
+        const remainDist = maxDY - CORE_R_Y;
+
+        if (remainDist > 0) {
+            ny = coreNy + ((distY - CORE_R_Y) / remainDist) * remainNy;
+        } else {
+            ny = coreNy;
+        }
+    }
+
+    // 最终安全钳制
+    targetEyeX = Math.max(-1, Math.min(1, nx));
+    targetEyeY = Math.max(-1, Math.min(1, ny));
+
+    // ==========================================
+    // ★ 双区状态调试打印 (按键盘 1 开启)
+    // ==========================================
+    if (window._poiDebugLoggingEnabled) {
+        if (!window._poiLastMoveLogTime) window._poiLastMoveLogTime = 0;
+        const now = performance.now();
+        if (now - window._poiLastMoveLogTime > 150) {
+            const zoneX = distX <= CORE_R_X ? "🟢核心区" : "🟠边缘区";
+            const zoneY = distY <= CORE_R_Y ? "🟢核心区" : "🟠边缘区";
+            console.log(
+                `%c[状态] X: ${zoneX} | Y: ${zoneY}\n` +
+                `%c[映射] nx:${nx.toFixed(3)}, ny:${ny.toFixed(3)}`,
+                "color: #27ae60;", "color: #e67e22;"
+            );
+            window._poiLastMoveLogTime = now;
+        }
+    }
+};
+// const angleX = model.internalModel.coreModel.getParameterValueById('ParamAngleX') || 0;
+// const eyeBallX = model.internalModel.coreModel.getParameterValueById('ParamEyeBallX') || 0;
+// const angleY = model.internalModel.coreModel.getParameterValueById('ParamAngleY') || 0;
+// const eyeBallY = model.internalModel.coreModel.getParameterValueById('ParamEyeBallY') || 0;
+// console.log(
+//     `%c[POI 双轴调试台]`, "color: #0099cc; font-weight: bold;",
+//     `\n ━ X轴方向 ━ 目标X: ${targetEyeX.toFixed(3)} | 当前X: ${currentEyeX.toFixed(3)} | 头转X(AngleX): ${angleX.toFixed(3)} | 眼球X: ${eyeBallX.toFixed(3)}` +
+//     `\n ━ Y轴方向 ━ 目标Y: ${targetEyeY.toFixed(3)} | 当前Y: ${currentEyeY.toFixed(3)} | 头转Y(AngleY): ${angleY.toFixed(3)} | 眼球Y: ${eyeBallY.toFixed(3)}`
+// );
