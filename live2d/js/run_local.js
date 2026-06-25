@@ -591,7 +591,7 @@ function InitPoi() {
             const TRACKING_SPEED = 0.2;
             // 2. 物理限速器 (单位：每帧允许的最大参数跨度)
             // 0.04 意味着全扭头 (-1 到 1) 最快也需要强制花费 50 帧 (将近 1 秒) 才能转完，彻底告别甩头瞬移
-            const MAX_SPEED = 0.04;
+            const MAX_SPEED = 0.05;
 
             // 第一步：计算理论上这一帧该走多远
             let deltaX = (targetEyeX - currentEyeX) * TRACKING_SPEED;
