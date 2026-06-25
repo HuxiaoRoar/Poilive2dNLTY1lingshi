@@ -1,6 +1,8 @@
 {
 	"Version": 3,
 	"Meta": {
+		"FadeInTime": 0.2,
+		"FadeOutTime": 0.133,
 		"Duration": 1.6,
 		"Fps": 30.0,
 		"Loop": true,

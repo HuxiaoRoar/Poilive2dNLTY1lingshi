@@ -536,45 +536,44 @@ function InitPoi() {
             const dy = event.clientY - modelCenterY;
 
             // ==========================================
-            // 第一步：非对称边缘极值映射 (让上下左右都能达到最大值)
+            // 第一步：获取“最远边距”作为全局唯一的运动基准 (你的方法一)
             // ==========================================
-            const maxDx = dx > 0 ? (window.innerWidth - modelCenterX) : modelCenterX;
-            const maxDy = dy > 0 ? (window.innerHeight - modelCenterY) : modelCenterY;
+            // 分别找出 X 轴和 Y 轴上，距离模型中心最远的那一侧边缘的距离
+            const maxDistX = Math.max(modelCenterX, window.innerWidth - modelCenterX);
+            const maxDistY = Math.max(modelCenterY, window.innerHeight - modelCenterY);
 
             // 安全除法，防止模型贴墙时分母为 0
-            const safeMaxDx = Math.max(1, maxDx);
-            const safeMaxDy = Math.max(1, maxDy);
+            const safeMaxX = Math.max(1, maxDistX);
+            const safeMaxY = Math.max(1, maxDistY);
 
-            // 算出原始的矩形比例 (-1.0 到 1.0)
-            const rawNx = dx / safeMaxDx;
-            const rawNy = -(dy / safeMaxDy); // Live2D Y轴向上为正
-
-            // ==========================================
-            // 第二步：手柄摇杆向量球形归一 (打破斜角双极值)
-            // ==========================================
-            // 勾股定理算出合力向量长度。如果在屏幕四角，这个值会达到 1.414
-            const mag = Math.sqrt(rawNx * rawNx + rawNy * rawNy);
-            if (mag === 0) return;
-
-            // 强行把合力长度压回 1.0 以内。
-            // 这样在对角线时，X和Y最多只能是 0.707，脖子再也不会扭断了！
-            const clampedMag = Math.min(1.0, mag);
+            window._poiScreenWidth = window.innerWidth;
+            window._poiScreenHeight = window.innerHeight;
+            window._poiSafeMaxX = safeMaxX;
+            window._poiSafeMaxY = safeMaxY;
 
             // ==========================================
-            // 第三步：仿生视觉衰减曲线 (Ease-Out Cubic)
+            // 第二步：独立计算线性比例 
             // ==========================================
-            // 魔法公式：1 - (1 - x)^3
-            // 效果：鼠标移出 20% 的距离，脑袋就转了 50%；鼠标移出最后的 80%，脑袋只转最后的 1%
-            // 完美还原“鼠标离模型越近，变化越剧烈”的物理感知
-            const easedMag = 1 - Math.pow(1 - clampedMag, 3);
+            // 此时：长边走到尽头刚好是 1.0 或 -1.0。短边走到尽头只是一个小数 (比如 -0.2)
+            const rawNx = Math.max(-1, Math.min(1, dx / safeMaxX));
+            const rawNy = Math.max(-1, Math.min(1, -(dy / safeMaxY))); // Live2D Y轴向上为正
+
+            // 删除球形向量归一化，让 X 和 Y 彻底独立自由运转
 
             // ==========================================
-            // 第四步：重新分配最终参数
+            // 第三步：独立套用仿生视觉衰减曲线 (Ease-Out Cubic)
             // ==========================================
-            // (原始方向 / 原始长度) = 纯粹的方向向量
-            // 纯粹的方向向量 * 衰减后的长度 = 最终结果
-            targetEyeX = (rawNx / mag) * easedMag;
-            targetEyeY = (rawNy / mag) * easedMag;
+            // 封装衰减函数：1 - (1 - 绝对值)^3，并保留原始方向(正负号)
+            const applyBionicDecay = (n) => {
+                const absN = Math.abs(n);
+                // 魔法生效点：移动 0.2 (20%) 的距离，结果为 1-(0.8)^3 = 0.488 (约 50%)
+                const eased = 1 - Math.pow(1 - absN, 2);
+                return n < 0 ? -eased : eased;
+            };
+
+            // 分别将 X 和 Y 的比例送入衰减器
+            targetEyeX = applyBionicDecay(rawNx);
+            targetEyeY = applyBionicDecay(rawNy);
         };
 
         window.addEventListener('pointermove', window._poiPointerMoveHandler);
@@ -584,25 +583,29 @@ function InitPoi() {
         // ==========================================
         model.internalModel.on('beforeModelUpdate', () => {
 
-            // ==========================================
-            // ★ 升级 2：带有速度上限的阻尼计算
-            // ==========================================
-            // 1. 基础追踪阻尼 (建议 0.2，保证微小移动的跟手感)
-            const TRACKING_SPEED = 0.2;
-            // 2. 物理限速器 (单位：每帧允许的最大参数跨度)
-            // 0.04 意味着全扭头 (-1 到 1) 最快也需要强制花费 50 帧 (将近 1 秒) 才能转完，彻底告别甩头瞬移
-            const MAX_SPEED = 0.05;
+            const TRACKING_SPEED = 0.4;
+            const MAX_SPEED = 0.1;
 
-            // 第一步：计算理论上这一帧该走多远
-            let deltaX = (targetEyeX - currentEyeX) * TRACKING_SPEED;
-            let deltaY = (targetEyeY - currentEyeY) * TRACKING_SPEED;
+            // 1. 理论上这帧该走多远
+            let rawDeltaX = (targetEyeX - currentEyeX) * TRACKING_SPEED;
+            let rawDeltaY = (targetEyeY - currentEyeY) * TRACKING_SPEED;
 
-            // 第二步：绝对限速钳制 (Clamp)
-            // 如果理论位移超过了 MAX_SPEED，强行压扁；如果没有超过，则保持原样
-            deltaX = Math.max(-MAX_SPEED, Math.min(MAX_SPEED, deltaX));
-            deltaY = Math.max(-MAX_SPEED, Math.min(MAX_SPEED, deltaY));
+            // 2. 实际被限速后的位移
+            let deltaX = Math.max(-MAX_SPEED, Math.min(MAX_SPEED, rawDeltaX));
+            let deltaY = Math.max(-MAX_SPEED, Math.min(MAX_SPEED, rawDeltaY));
 
-            // 第三步：将受控的安全位移累加到当前状态上
+            // ★ 新增：对比理论值和实际值，判断是否踩了刹车
+            const isBraking = (rawDeltaX !== deltaX) || (rawDeltaY !== deltaY);
+
+            // ★ 新增：缓存速度状态，供快照抓取。用勾股定理算出合力速度大小以便直观查看
+            window._poiSpeedCache = {
+                theoretical: Math.sqrt(rawDeltaX * rawDeltaX + rawDeltaY * rawDeltaY),
+                applied: Math.sqrt(deltaX * deltaX + deltaY * deltaY),
+                isBraking: isBraking,
+                max: MAX_SPEED
+            };
+
+            // 3. 执行最终安全位移
             currentEyeX += deltaX;
             currentEyeY += deltaY;
 
@@ -687,25 +690,49 @@ function InitPoi() {
                     break;
 
                 case '4': // 单次参数快照 (雷达扫描)
-                    if (!currentLive2dModel || !window._poiCachedBones) {
-                        console.log("%c[Poi快照] ❌ 模型数据尚未准备好", "color: red;");
-                        return;
-                    }
+            if (!currentLive2dModel || !window._poiCachedBones) {
+                console.log("%c[Poi快照] ❌ 模型数据尚未准备好", "color: red;");
+                return;
+            }
+            
+            // 提取各种缓存数据
+            const bones = window._poiCachedBones;
+            const mX = window._poiRealMouseX || 0;
+            const mY = window._poiRealMouseY || 0;
+            const sW = window._poiScreenWidth || 0;
+            const sH = window._poiScreenHeight || 0;
+            const bX = window._poiSafeMaxX || 0;
+            const bY = window._poiSafeMaxY || 0;
+            const speed = window._poiSpeedCache || { theoretical: 0, applied: 0, isBraking: false, max: 0.08 };
+            
+            // 格式化当前与目标指令
+            const targetXStr = typeof targetEyeX !== 'undefined' ? targetEyeX.toFixed(3) : 'N/A';
+            const targetYStr = typeof targetEyeY !== 'undefined' ? targetEyeY.toFixed(3) : 'N/A';
+            const currXStr = typeof currentEyeX !== 'undefined' ? currentEyeX.toFixed(3) : 'N/A';
+            const currYStr = typeof currentEyeY !== 'undefined' ? currentEyeY.toFixed(3) : 'N/A';
 
-                    // 直接读取渲染循环里刚写好的缓存数据
-                    const bones = window._poiCachedBones;
-                    const mX = window._poiRealMouseX || 0;
-                    const mY = window._poiRealMouseY || 0;
+            // 动态判定红绿灯状态
+            const brakeStatus = speed.isBraking ? "🔴 [已刹车]" : "🟢 [未刹车]";
+            const brakeColor = speed.isBraking ? "color: #e74c3c; font-weight: bold; background: #fadbd8; padding: 2px;" : "color: #27ae60; font-weight: bold; background: #d5f5e3; padding: 2px;";
 
-                    console.log(
-                        `%c[📸 单次快照] \n` +
-                        `🖱️ 屏幕鼠标: X:${mX}px, Y:${mY}px\n` +
-                        `🎯 目标指令: X:${typeof targetEyeX !== 'undefined' ? targetEyeX.toFixed(3) : 'N/A'}, Y:${typeof targetEyeY !== 'undefined' ? targetEyeY.toFixed(3) : 'N/A'}\n` +
-                        `🏃 当前平滑: X:${typeof currentEyeX !== 'undefined' ? currentEyeX.toFixed(3) : 'N/A'}, Y:${typeof currentEyeY !== 'undefined' ? currentEyeY.toFixed(3) : 'N/A'}\n` +
-                        `🦴 骨骼实况: 头(X:${bones.aX.toFixed(2)}, Y:${bones.aY.toFixed(2)}) | 眼(X:${bones.eX.toFixed(2)}, Y:${bones.eY.toFixed(2)})`,
-                        "color: #8e44ad; font-weight: bold; font-size: 12px; background: #f3e5f5; padding: 6px; border-radius: 4px;"
-                    );
-                    break;
+            // 多重 %c 实现同行差异化高亮
+            console.log(
+                `%c[📸 单次快照 - 雷达扫描]\n` +
+                `%c🖥️ 屏幕尺寸: 宽 ${sW}px, 高 ${sH}px  |  📏 活动基准: X轴极值边 ${bX.toFixed(1)}px, Y轴极值边 ${bY.toFixed(1)}px\n` +
+                `%c🖱️ 鼠标实况: X: ${mX.toFixed(1)}px, Y: ${mY.toFixed(1)}px\n` +
+                `%c🎯 目标指令: X: ${targetXStr}, Y: ${targetYStr}  |  🏃 当前平滑: X: ${currXStr}, Y: ${currYStr}\n` +
+                `%c🦴 骨骼实况: 头(X:${bones.aX.toFixed(2)}, Y:${bones.aY.toFixed(2)}) | 眼(X:${bones.eX.toFixed(2)}, Y:${bones.eY.toFixed(2)})\n` +
+                `%c${brakeStatus}%c 🚥 理论速度: ${speed.theoretical.toFixed(4)} | 实际放行: ${speed.applied.toFixed(4)} (上限参考:${speed.max})`,
+                // 下面是对应上面 7 个 %c 的 CSS 样式
+                "color: #8e44ad; font-weight: bold; font-size: 13px; background: #f3e5f5; padding: 4px; border-radius: 4px;",
+                "color: #7f8c8d; font-size: 12px;", // 屏幕与基准
+                "color: #34495e; font-size: 12px;", // 鼠标实况
+                "color: #d35400; font-size: 12px;", // 目标与平滑
+                "color: #2980b9; font-size: 12px;", // 骨骼
+                brakeColor,                         // 刹车红绿灯标
+                "color: #555; font-size: 12px;"     // 速度明细
+            );
+            break;
             }
         });
         
