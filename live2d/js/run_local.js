@@ -576,38 +576,56 @@ function InitPoi() {
             targetEyeY = applyBionicDecay(rawNy);
         };
 
-        window.addEventListener('pointermove', window._poiPointerMoveHandler);
+        window.addEventListener('pointermove', window._poiPointerMoveHandler);        
 
         // ==========================================
         // 3. 渲染循环钩子 (将指令注入模型骨骼)
         // ==========================================
         model.internalModel.on('beforeModelUpdate', () => {
 
-            const TRACKING_SPEED = 0.4;
-            const MAX_SPEED = 0.1;
+            // ==========================================
+            // ★ 方案 B：真实物理引擎 (弹簧-质量-阻尼系统)
+            // ==========================================
+            // 初始化全局速度向量 (记录肌肉的动量)
+            if (typeof window._poiVelX === 'undefined') window._poiVelX = 0;
+            if (typeof window._poiVelY === 'undefined') window._poiVelY = 0;
 
-            // 1. 理论上这帧该走多远
-            let rawDeltaX = (targetEyeX - currentEyeX) * TRACKING_SPEED;
-            let rawDeltaY = (targetEyeY - currentEyeY) * TRACKING_SPEED;
+            // 1. 物理参数调校区 (核心中的核心)
+            // [拉力系数]: 决定鼠标拉动脑袋的力气有多大。数值越大，跟手越紧。
+            const SPRING_STIFFNESS = 0.05;
+            // [摩擦阻尼]: 决定空气的粘滞感。数值越大，越不容易产生弹簧晃动。
+            // 黄金公式：Damping 约等于 2 * Math.sqrt(Stiffness) 时为临界阻尼(最稳)。
+            const SPRING_DAMPING = 0.35;
 
-            // 2. 实际被限速后的位移
-            let deltaX = Math.max(-MAX_SPEED, Math.min(MAX_SPEED, rawDeltaX));
-            let deltaY = Math.max(-MAX_SPEED, Math.min(MAX_SPEED, rawDeltaY));
+            // 2. 胡克定律 (F = k * x)
+            // 算出距离偏差，乘以拉力，得到弹簧赋予的原始动力
+            let forceX = (targetEyeX - currentEyeX) * SPRING_STIFFNESS;
+            let forceY = (targetEyeY - currentEyeY) * SPRING_STIFFNESS;
 
-            // ★ 新增：对比理论值和实际值，判断是否踩了刹车
-            const isBraking = (rawDeltaX !== deltaX) || (rawDeltaY !== deltaY);
+            // 3. 施加阻尼 (a = F - c * v)
+            // 动力减去当前速度带来的摩擦力，得到最终的加速度
+            let accX = forceX - window._poiVelX * SPRING_DAMPING;
+            let accY = forceY - window._poiVelY * SPRING_DAMPING;
 
-            // ★ 新增：缓存速度状态，供快照抓取。用勾股定理算出合力速度大小以便直观查看
+            // 4. 积分运算 (速度累加加速度，位置累加速度)
+            window._poiVelX += accX;
+            window._poiVelY += accY;
+
+            // ★ 安全保险：防止极小浮点数导致的物理引擎无限微震计算
+            if (Math.abs(window._poiVelX) < 0.0001 && Math.abs(targetEyeX - currentEyeX) < 0.001) window._poiVelX = 0;
+            if (Math.abs(window._poiVelY) < 0.0001 && Math.abs(targetEyeY - currentEyeY) < 0.001) window._poiVelY = 0;
+
+            // 缓存状态供雷达使用
             window._poiSpeedCache = {
-                theoretical: Math.sqrt(rawDeltaX * rawDeltaX + rawDeltaY * rawDeltaY),
-                applied: Math.sqrt(deltaX * deltaX + deltaY * deltaY),
-                isBraking: isBraking,
-                max: MAX_SPEED
+                velX: window._poiVelX,
+                velY: window._poiVelY,
+                accX: accX,
+                accY: accY
             };
 
-            // 3. 执行最终安全位移
-            currentEyeX += deltaX;
-            currentEyeY += deltaY;
+            // 5. 肌肉位移生效
+            currentEyeX += window._poiVelX;
+            currentEyeY += window._poiVelY;
 
             if (model.internalModel.focusController) {
                 model.internalModel.focusController.focus(currentEyeX, currentEyeY, true);
@@ -689,50 +707,47 @@ function InitPoi() {
                     console.log("%c================ 📌 [标记点] ================ ", "color: white; background: #f39c12; font-size: 14px; padding: 4px;");
                     break;
 
-                case '4': // 单次参数快照 (雷达扫描)
-            if (!currentLive2dModel || !window._poiCachedBones) {
-                console.log("%c[Poi快照] ❌ 模型数据尚未准备好", "color: red;");
-                return;
-            }
-            
-            // 提取各种缓存数据
-            const bones = window._poiCachedBones;
-            const mX = window._poiRealMouseX || 0;
-            const mY = window._poiRealMouseY || 0;
-            const sW = window._poiScreenWidth || 0;
-            const sH = window._poiScreenHeight || 0;
-            const bX = window._poiSafeMaxX || 0;
-            const bY = window._poiSafeMaxY || 0;
-            const speed = window._poiSpeedCache || { theoretical: 0, applied: 0, isBraking: false, max: 0.08 };
-            
-            // 格式化当前与目标指令
-            const targetXStr = typeof targetEyeX !== 'undefined' ? targetEyeX.toFixed(3) : 'N/A';
-            const targetYStr = typeof targetEyeY !== 'undefined' ? targetEyeY.toFixed(3) : 'N/A';
-            const currXStr = typeof currentEyeX !== 'undefined' ? currentEyeX.toFixed(3) : 'N/A';
-            const currYStr = typeof currentEyeY !== 'undefined' ? currentEyeY.toFixed(3) : 'N/A';
+                case '4': // 单次参数快照 (物理雷达版)
+                    if (!currentLive2dModel || !window._poiCachedBones) {
+                        console.log("%c[Poi快照] ❌ 模型数据尚未准备好", "color: red;");
+                        return;
+                    }
 
-            // 动态判定红绿灯状态
-            const brakeStatus = speed.isBraking ? "🔴 [已刹车]" : "🟢 [未刹车]";
-            const brakeColor = speed.isBraking ? "color: #e74c3c; font-weight: bold; background: #fadbd8; padding: 2px;" : "color: #27ae60; font-weight: bold; background: #d5f5e3; padding: 2px;";
+                    const bones = window._poiCachedBones;
+                    const mX = window._poiRealMouseX || 0;
+                    const mY = window._poiRealMouseY || 0;
+                    const sW = window._poiScreenWidth || 0;
+                    const sH = window._poiScreenHeight || 0;
+                    const bX = window._poiSafeMaxX || 0;
+                    const bY = window._poiSafeMaxY || 0;
+                    const phys = window._poiSpeedCache || { velX: 0, velY: 0, accX: 0, accY: 0 };
 
-            // 多重 %c 实现同行差异化高亮
-            console.log(
-                `%c[📸 单次快照 - 雷达扫描]\n` +
-                `%c🖥️ 屏幕尺寸: 宽 ${sW}px, 高 ${sH}px  |  📏 活动基准: X轴极值边 ${bX.toFixed(1)}px, Y轴极值边 ${bY.toFixed(1)}px\n` +
-                `%c🖱️ 鼠标实况: X: ${mX.toFixed(1)}px, Y: ${mY.toFixed(1)}px\n` +
-                `%c🎯 目标指令: X: ${targetXStr}, Y: ${targetYStr}  |  🏃 当前平滑: X: ${currXStr}, Y: ${currYStr}\n` +
-                `%c🦴 骨骼实况: 头(X:${bones.aX.toFixed(2)}, Y:${bones.aY.toFixed(2)}) | 眼(X:${bones.eX.toFixed(2)}, Y:${bones.eY.toFixed(2)})\n` +
-                `%c${brakeStatus}%c 🚥 理论速度: ${speed.theoretical.toFixed(4)} | 实际放行: ${speed.applied.toFixed(4)} (上限参考:${speed.max})`,
-                // 下面是对应上面 7 个 %c 的 CSS 样式
-                "color: #8e44ad; font-weight: bold; font-size: 13px; background: #f3e5f5; padding: 4px; border-radius: 4px;",
-                "color: #7f8c8d; font-size: 12px;", // 屏幕与基准
-                "color: #34495e; font-size: 12px;", // 鼠标实况
-                "color: #d35400; font-size: 12px;", // 目标与平滑
-                "color: #2980b9; font-size: 12px;", // 骨骼
-                brakeColor,                         // 刹车红绿灯标
-                "color: #555; font-size: 12px;"     // 速度明细
-            );
-            break;
+                    const targetXStr = typeof targetEyeX !== 'undefined' ? targetEyeX.toFixed(3) : 'N/A';
+                    const targetYStr = typeof targetEyeY !== 'undefined' ? targetEyeY.toFixed(3) : 'N/A';
+                    const currXStr = typeof currentEyeX !== 'undefined' ? currentEyeX.toFixed(3) : 'N/A';
+                    const currYStr = typeof currentEyeY !== 'undefined' ? currentEyeY.toFixed(3) : 'N/A';
+
+                    // 合成当前向量速度大小
+                    const currentSpeed = Math.sqrt(phys.velX * phys.velX + phys.velY * phys.velY);
+                    // 速度标尺：大于 0.08 标红(高速狂飙)，否则标绿
+                    const speedColor = currentSpeed > 0.08 ? "color: #e74c3c; font-weight: bold; background: #fadbd8; padding: 2px;" : "color: #27ae60; font-weight: bold; background: #d5f5e3; padding: 2px;";
+
+                    console.log(
+                        `%c[📸 单次快照 - 物理引擎雷达]\n` +
+                        `%c🖥️ 屏幕尺寸: 宽 ${sW}px, 高 ${sH}px  |  📏 活动基准: X轴极值边 ${bX.toFixed(1)}px, Y轴极值边 ${bY.toFixed(1)}px\n` +
+                        `%c🖱️ 鼠标实况: X: ${mX.toFixed(1)}px, Y: ${mY.toFixed(1)}px\n` +
+                        `%c🎯 目标指令: X: ${targetXStr}, Y: ${targetYStr}  |  🏃 当前平滑: X: ${currXStr}, Y: ${currYStr}\n` +
+                        `%c🦴 骨骼实况: 头(X:${bones.aX.toFixed(2)}, Y:${bones.aY.toFixed(2)}) | 眼(X:${bones.eX.toFixed(2)}, Y:${bones.eY.toFixed(2)})\n` +
+                        `%c⚙️ 当前动量 (V): ${currentSpeed.toFixed(4)} %c | 💥 瞬时受力 (aX:${phys.accX.toFixed(4)}, aY:${phys.accY.toFixed(4)})`,
+                        "color: #8e44ad; font-weight: bold; font-size: 13px; background: #f3e5f5; padding: 4px; border-radius: 4px;",
+                        "color: #7f8c8d; font-size: 12px;",
+                        "color: #34495e; font-size: 12px;",
+                        "color: #d35400; font-size: 12px;",
+                        "color: #2980b9; font-size: 12px;",
+                        speedColor,
+                        "color: #555; font-size: 12px;"
+                    );
+                    break;
             }
         });
         
