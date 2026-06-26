@@ -655,26 +655,9 @@ function InitPoi() {
             const aY = getSafeParam('ParamAngleY', 'PARAM_ANGLE_Y');
             const eX = getSafeParam('ParamEyeBallX', 'PARAM_EYE_BALL_X');
             const eY = getSafeParam('ParamEyeBallY', 'PARAM_EYE_BALL_Y');
-
             
             // ★ 新增：每一帧都把最新的骨骼实况写入全局缓存，防止在其他线程读取为0
-            window._poiCachedBones = { aX, aY, eX, eY };
-
-            if (window._poiDebugLoggingEnabled) {
-                if (!window._poiLastLogTime) window._poiLastLogTime = 0;
-                const now = performance.now();
-
-                // 150毫秒连续输出
-                if (now - window._poiLastLogTime > 150) {
-                    console.log(
-                        `%c[鼠标位置] X:${window._poiRealMouseX}px, Y:${window._poiRealMouseY}px\n` +
-                        `%c[数值插值] 目标Target(X:${targetEyeX.toFixed(3)}, Y:${targetEyeY.toFixed(3)}) | 当前平滑(X:${currentEyeX.toFixed(3)}, Y:${currentEyeY.toFixed(3)})\n` +
-                        `%c[骨骼实况] 头转(AngleX:${aX.toFixed(2)}, Y:${aY.toFixed(2)}) | 眼球(EyeX:${eX.toFixed(2)}, Y:${eY.toFixed(2)})`,
-                        "color: #9b59b6;", "color: #e67e22;", "color: #2980b9;"
-                    );
-                    window._poiLastLogTime = now;
-                }
-            }
+            window._poiCachedBones = { aX, aY, eX, eY };           
             
         });
 
@@ -693,21 +676,7 @@ function InitPoi() {
             if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
 
             switch (e.key) {
-                case '1': // 开启连续打印
-                    window._poiDebugLoggingEnabled = true;
-                    console.log("%c[PoiDebug] 🟢 实时追踪打印：已开启！", "color: white; background: #34a853; padding: 2px 6px; border-radius: 4px;");
-                    break;
-
-                case '2': // 关闭连续打印
-                    window._poiDebugLoggingEnabled = false;
-                    console.log("%c[PoiDebug] 🔴 实时追踪打印：已关闭！", "color: white; background: #ea4335; padding: 2px 6px; border-radius: 4px;");
-                    break;
-
-                case '3': // 插入视觉标记 (马克键)
-                    console.log("%c================ 📌 [标记点] ================ ", "color: white; background: #f39c12; font-size: 14px; padding: 4px;");
-                    break;
-
-                case '4': // 单次参数快照 (物理雷达版)
+                case '1': // 开启连续打印                    
                     if (!currentLive2dModel || !window._poiCachedBones) {
                         console.log("%c[Poi快照] ❌ 模型数据尚未准备好", "color: red;");
                         return;

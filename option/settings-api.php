@@ -72,14 +72,24 @@ class PoiLive2D_Settings {
         
         $this->add_field('poilive2d-style', 'section_style_role', 'role_record', '记录模型选择', 'radio_callback', ['1' => '是（下次进入，模型不变）', '0' => '否（下次进入，模型切换）']);
         $this->add_field('poilive2d-style', 'section_style_role', 'texture_record', '记录材质选择', 'radio_callback', ['1' => '是（下次进入，材质不变）', '0' => '否（下次进入，材质切换）']);
+        $this->add_field('poilive2d-style', 'section_style_role', 'drag_record', '记录拖拽位置', 'radio_callback', ['1' => '是（下次进入，位置固定）', '0' => '否（下次进入，位置复原）']);
+
         $this->add_field('poilive2d-style', 'section_style_role', 'switch_model', '模型切换方式', 'select_callback', ['random' => '随机', 'sequential' => '顺序']);
+
         $this->add_field('poilive2d-style', 'section_style_role', 'switch_texture', '材质切换方式', 'select_callback', ['random' => '随机', 'sequential' => '顺序']);
+
+        $this->add_field('poilive2d-style', 'section_style_role', 'drag_mode', '拖拽方式', 'select_callback', ['free' => '自由拖拽（松手复原）','free-' => '自由拖拽（松手固定）','horizontal' => '水平拖拽','vertical' => '垂直拖拽','disable' => '禁用']);        
+        $this->add_field('poilive2d-style', 'section_style_role', 'drag_release', '松开鼠标后', 'select_callback', ['restore' => '还原位置', 'keep' => '保持位置']);
+
+        $this->add_field('poilive2d-style', 'section_style_role', 'texture_record', '记录材质选择', 'radio_callback', ['1' => '是（下次进入，材质不变）', '0' => '否（下次进入，材质切换）']);
+
+
+
         $this->add_field('poilive2d-style', 'section_style_role', 'role_size', '角色大小', 'size_callback', '宽度 x 高度');
         $this->add_field('poilive2d-style', 'section_style_role', 'role_hide_width', '小于指定宽度隐藏角色', 'number_callback', '设置为 0 时，角色常驻，不隐藏');
         $this->add_field('poilive2d-style', 'section_style_role', 'role_dock', '角色贴边选择', 'select_callback', ['left' => '靠左', 'right' => '靠右']);
         $this->add_field('poilive2d-style', 'section_style_role', 'role_margin', '角色页面边距(像素)', 'number_callback');
-        $this->add_field('poilive2d-style', 'section_style_role', 'drag_mode', '拖拽方式', 'select_callback', ['disable' => '禁用', 'horizontal' => '仅水平拖拽', 'free' => '自由拖拽']);
-        $this->add_field('poilive2d-style', 'section_style_role', 'drag_release', '松开鼠标后', 'select_callback', ['restore' => '还原位置', 'keep' => '保持位置']);
+
 
         add_settings_section('section_style_btn', '按钮样式设置：', null, 'poilive2d-style');
         $this->add_field('poilive2d-style', 'section_style_btn', 'btn_size', '按钮大小(像素)', 'number_callback');
