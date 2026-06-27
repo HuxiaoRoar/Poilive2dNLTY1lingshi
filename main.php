@@ -107,12 +107,20 @@ function live2d_head()
         $r_h = isset($settings['role_size']['h']) ? intval($settings['role_size']['h']) : 250;
         $dock = isset($settings['role_dock']) ? $settings['role_dock'] : 'left';
         $margin = isset($settings['role_margin']) ? intval($settings['role_margin']) : 30;
+
+        $v_dock = isset($settings['role_v_dock']) ? $settings['role_v_dock'] : 'bottom';
+        $v_margin = isset($settings['role_v_margin']) ? intval($settings['role_v_margin']) : 0; // 默认贴底 0px
+
+
         $hide_w = isset($settings['role_hide_width']) ? intval($settings['role_hide_width']) : 860;
 
-        $dock_css = ($dock === 'right') ? "right: {$margin}px !important; left: auto !important;" : "left: {$margin}px !important; right: auto !important;";
+        $v_css = ($v_dock === 'top') ? "top: {$v_margin}px !important; bottom: auto !important;" : "bottom: {$v_margin}px !important; top: auto !important;";
+
+        $h_css = ($dock === 'right') ? "right: {$margin}px !important; left: auto !important;" : "left: {$margin}px !important; right: auto !important;";
+        
         
         // 增加 transform: translateZ(0) 强制硬件加速，锁定最顶层叠上下文
-        $css .= "#landlord { width: {$r_w}px !important; height: {$r_h}px !important; {$dock_css} z-index: 99 !important; transform: translateZ(0); }";
+        $css .= "#landlord { width: {$r_w}px !important; height: {$r_h}px !important; {$h_css} {$v_css} z-index: 99 !important; transform: translateZ(0); }";
         $css .= "#live2d { width: {$r_w}px !important; height: {$r_h}px !important; }";
         
         if ($hide_w > 0) {

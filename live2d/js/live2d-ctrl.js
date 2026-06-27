@@ -75,11 +75,15 @@ function initLive2d() {
     } else {
         var marginTop = parseInt(poilive2d_config.btn_margin_top) || 64;
         var btnGap = 5;
-        var dragMode = poilive2d_config.drag_mode || 'free';
-        var cursorStyle = (dragMode === 'free' || dragMode === 'horizontal') ? 'cursor: move !important;' : '';
+        var dragMode = poilive2d_config.drag_mode || 'free_restore';
+        var landlordDom = document.getElementById('landlord');
 
-        var layoutStyle = `
-            #landlord {${cursorStyle}}
+        var cursorStyle = '';
+        if (dragMode === 'free_restore' || dragMode === 'free_keep') cursorStyle = 'cursor: move !important;';
+        else if (dragMode === 'horizontal') cursorStyle = 'cursor: ew-resize !important;';
+        else if (dragMode === 'vertical') cursorStyle = 'cursor: ns-resize !important;';
+
+        var layoutStyle = `            
             .l2d-menu-left, .l2d-menu-right {
                 position: absolute; display: flex; flex-direction: column; gap: ${btnGap}px;
                 padding: 0; margin: 0; list-style: none; display: none; cursor: default !important;
@@ -271,11 +275,31 @@ function initLive2d() {
         });
     });
 
-    var dragMode = poilive2d_config.drag_mode || 'free';
-    var dragRelease = poilive2d_config.drag_release || 'restore';
+
     var landlordDom = document.getElementById('landlord');
 
     if (landlordDom) {
+        var dragRecord = poilive2d_config.drag_record || '0';
+        if (dragRecord === '1') {
+            var savedLeft = localStorage.getItem('live2d_cell_left');
+            var savedTop = localStorage.getItem('live2d_cell_top');
+
+            // 只有当本地明确存在历史保存的有效坐标时，才强行覆盖内联定位
+            if (savedLeft !== null && savedTop !== null && savedLeft !== 'auto' && savedTop !== 'auto') {
+                landlordDom.style.setProperty('left', savedLeft, 'important');
+                landlordDom.style.setProperty('top', savedTop, 'important');
+                landlordDom.style.setProperty('right', 'auto', 'important');
+                landlordDom.style.setProperty('bottom', 'auto', 'important');
+            }
+        } else {
+            // 【新增防呆功能】：如果选项未开启（或被关闭），但本地残留有历史位置信息
+            // 直接将本地缓存清除，下次再开启记录时完全按照后台默认位置走，解决拖出窗口无法找回的痛点
+            if (localStorage.getItem('live2d_cell_left') !== null || localStorage.getItem('live2d_cell_top') !== null) {                
+                localStorage.removeItem('live2d_cell_left');
+                localStorage.removeItem('live2d_cell_top');
+            }
+        }
+        
         // ==========================================
         // 1. 动态生成专属拖拽手柄 (物理隔离的载体)
         // ==========================================
@@ -289,14 +313,22 @@ function initLive2d() {
         // ==========================================
         // 2. 根据拖拽模式，赋予不同的图标和鼠标指针
         // ==========================================
-        if (dragMode === 'free') {
+        var isFree = (dragMode === 'free_restore' || dragMode === 'free_keep');
+        var isHorizontal = (dragMode === 'horizontal');
+        var isVertical = (dragMode === 'vertical');
+
+        if (isFree) {
             dragHandle.innerHTML = '<span>✥</span>'; // 十字方向标
             dragHandle.style.cursor = 'move';
             dragHandle.title = "按住自由拖动";
-        } else if (dragMode === 'horizontal') {
+        } else if (isHorizontal) {
             dragHandle.innerHTML = '<span>↔</span>'; // 左右水平标
             dragHandle.style.cursor = 'ew-resize';
             dragHandle.title = "按住水平拖动";
+        } else if (isVertical) {
+            dragHandle.innerHTML = '<span>↕︎</span>'; // 上下垂直标
+            dragHandle.style.cursor = 'ns-resize';
+            dragHandle.title = "按住垂直拖动";
         } else {
             dragHandle.innerHTML = '<span>🔒</span>'; // 锁头
             dragHandle.style.cursor = 'not-allowed';
@@ -338,11 +370,13 @@ function initLive2d() {
                 if (!isDraggingDiv) return;
                 var dx = e.clientX - startX, dy = e.clientY - startY;
 
-                if (dragMode === 'horizontal' || dragMode === 'free') {
+                // X轴位移：水平拖拽 或 自由拖拽
+                if (isHorizontal || isFree) {
                     landlordDom.style.setProperty('left', (initialX + dx) + 'px', 'important');
                     landlordDom.style.setProperty('right', 'auto', 'important');
                 }
-                if (dragMode === 'free') {
+                // Y轴位移：垂直拖拽 或 自由拖拽
+                if (isVertical || isFree) {
                     landlordDom.style.setProperty('top', (initialY + dy) + 'px', 'important');
                     landlordDom.style.setProperty('bottom', 'auto', 'important');
                 }
@@ -352,11 +386,43 @@ function initLive2d() {
                 if (!isDraggingDiv) return;
                 isDraggingDiv = false;
                 landlordDom.style.setProperty('transition', 'all .3s ease-in-out', 'important');
-                if (dragRelease === 'restore') {
-                    landlordDom.style.removeProperty('top');
-                    landlordDom.style.removeProperty('left');
-                    landlordDom.style.removeProperty('right');
-                    landlordDom.style.removeProperty('bottom');
+
+                // 情形 A：如果是“自由拖拽（松手复原）”，则剥离位置，让它平滑滑回原位
+                if (dragMode === 'free_restore') {
+                    // 读取可能存在的历史记忆位置
+                    var savedLeft = localStorage.getItem('live2d_cell_left');
+                    var savedTop = localStorage.getItem('live2d_cell_top');
+
+                    // 如果开启了记录位置信息，并且本地确实存有历史有效坐标
+                    if (dragRecord === '1' && savedLeft !== null && savedTop !== null && savedLeft !== 'auto' && savedTop !== 'auto') {
+                        // 让它平滑滑回复原到【记录位置信息】的地方，而不是初始位置
+                        landlordDom.style.setProperty('left', savedLeft, 'important');
+                        landlordDom.style.setProperty('top', savedTop, 'important');
+                        landlordDom.style.setProperty('right', 'auto', 'important');
+                        landlordDom.style.setProperty('bottom', 'auto', 'important');
+                    } else {
+                        // 否则（未开启记录或本地没有缓存），按原计划剥离样式，退回到设置里的初始地方
+                        landlordDom.style.removeProperty('top');
+                        landlordDom.style.removeProperty('left');
+                        landlordDom.style.removeProperty('right');
+                        landlordDom.style.removeProperty('bottom');
+                    }
+                }
+                // 情形 B：如果是固定位置的模式（free_keep、horizontal、vertical）
+                else {
+                    // 如果开启了位置记录选项，在每次拖拽模型松手的时候记录模型当前位置
+                    if (dragRecord === '1') {
+                        var currentLeft = landlordDom.style.left || getComputedStyle(landlordDom).left;
+                        var currentTop = landlordDom.style.top || getComputedStyle(landlordDom).top;
+
+                        // 双重安全校验，确保提取到的不是非法的 'auto' 或空值
+                        if (currentLeft && currentLeft !== 'auto') {
+                            localStorage.setItem('live2d_cell_left', currentLeft);
+                        }
+                        if (currentTop && currentTop !== 'auto') {
+                            localStorage.setItem('live2d_cell_top', currentTop);
+                        }
+                    }
                 }
             });
         }

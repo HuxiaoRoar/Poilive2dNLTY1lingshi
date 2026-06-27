@@ -14,14 +14,17 @@
   
   "role_record": "0",
   "texture_record": "0",
+  "drag_record": "0",
   "switch_model": "random",
   "switch_texture": "random",
   "role_size": { "w": 280, "h": 250 },
   "role_hide_width": 860,
-  "role_dock": "left",
+  "role_dock": "left",  
   "role_margin": 30,
-  "drag_mode": "free",
-  "drag_release": "restore",
+  "role_v_dock": "bottom",
+  "role_v_margin": 0,
+  "drag_mode": "free_restore",
+
 
   "btn_size": 60,
   "btn_line_height": 20,
