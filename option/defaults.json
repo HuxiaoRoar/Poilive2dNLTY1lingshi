@@ -65,6 +65,11 @@
     "请输入本地一言，一行一条...|出处|作者",
     "所谓「开拓」，就是沿着前人未尽的道路，走出更遥远的距离。|崩坏·星穹铁道|开拓者"
   ],
+
+    "focus_track_mode": "native",
+  "focus_decay_power": "2",
+  "focus_spring_stiffness": "0.05",
+  "focus_spring_damping": "0.35",
   "welcome_hourly": [
     {
       "selector": "t0-5",
