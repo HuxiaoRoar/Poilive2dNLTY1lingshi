@@ -581,22 +581,6 @@ function InitPoi() {
         }
 
 
-        // ==========================================
-        // ★ 仿生眨眼引擎：独立状态机缓存 (带动态配置记忆)
-        // ==========================================
-        if (typeof window._poiBlinkSystem === 'undefined') {
-            window._poiBlinkSystem = {
-                modelRef: null,
-                state: 'IDLE',
-                timer: 0,
-                minInterval: 2000,
-                maxInterval: 5000,
-                nextBlinkInterval: 3000,
-                eyeOpen: 1.0,
-                lastTime: Date.now(),
-                isDoubleBlink: false
-            };
-        }
         TODO:
         // ==========================================
         // 3. 渲染循环钩子 (将指令注入模型骨骼)
@@ -604,108 +588,6 @@ function InitPoi() {
         model.internalModel.off('beforeModelUpdate'); // 清理历史残留钩子
         model.internalModel.on('beforeModelUpdate', () => {
             const blinkSys = window._poiBlinkSystem;
-
-            // 0. 模型初始化与配置提取
-            if (blinkSys.modelRef !== model) {
-                blinkSys.modelRef = model;
-                blinkSys.minInterval = 2000;
-                blinkSys.maxInterval = 5000;
-
-                // 【核心修复】：精准击杀原生的 EyeBlink 控制器，彻底防止参数打架！
-                // 这样物理引擎 (Physics) 就能 100% 吃到我们平滑的眨眼曲线
-                if (model.internalModel.eyeBlink) {
-                    model.internalModel.eyeBlink = null;
-                    console.log("[PoiLive2D] 已强制接管原生眨眼控制器，防止打架");
-                }
-
-                const rawJson = model.internalModel.settings.json;
-                if (rawJson && rawJson.Controllers && rawJson.Controllers.EyeBlink) {
-                    const blinkCfg = rawJson.Controllers.EyeBlink;
-                    if (typeof blinkCfg.MinInterval === 'number') blinkSys.minInterval = blinkCfg.MinInterval;
-                    if (typeof blinkCfg.MaxInterval === 'number') blinkSys.maxInterval = blinkCfg.MaxInterval;
-                    console.log(`[PoiLive2D] 提取到专属眨眼频率: ${blinkSys.minInterval} - ${blinkSys.maxInterval} ms`);
-                }
-                blinkSys.nextBlinkInterval = Math.random() * (blinkSys.maxInterval - blinkSys.minInterval) + blinkSys.minInterval;
-            }
-
-            const now = Date.now();
-            const dt = now - blinkSys.lastTime;
-            blinkSys.lastTime = now;
-
-            // 提取官方黄金节奏参数 (重现物理果冻感的关键)
-            const durationClose = 100;
-            const durationClosed = 50;
-            const durationOpen = 150;
-
-            // 1. 状态机运算：使用严格的时间比率 (t) 来确保精准的时长
-            if (blinkSys.state === 'IDLE') {
-                blinkSys.timer += dt;
-                if (blinkSys.timer >= blinkSys.nextBlinkInterval) {
-                    blinkSys.state = 'CLOSING';
-                    blinkSys.timer = 0;
-                    blinkSys.isDoubleBlink = Math.random() > 0.7; // 30%概率连眨
-                }
-            } else if (blinkSys.state === 'CLOSING') {
-                blinkSys.timer += dt;
-                let t = blinkSys.timer / durationClose;
-                if (t >= 1) {
-                    t = 1;
-                    blinkSys.state = 'CLOSED';
-                    blinkSys.timer = 0;
-                }
-                blinkSys.eyeOpen = 1.0 - t; // 线性平滑闭眼
-            } else if (blinkSys.state === 'CLOSED') {
-                blinkSys.timer += dt;
-                if (blinkSys.timer >= durationClosed) {
-                    blinkSys.state = 'OPENING';
-                    blinkSys.timer = 0;
-                }
-            } else if (blinkSys.state === 'OPENING') {
-                blinkSys.timer += dt;
-                let t = blinkSys.timer / durationOpen;
-                if (t >= 1) {
-                    t = 1;
-                    if (blinkSys.isDoubleBlink) {
-                        blinkSys.state = 'CLOSING';
-                        blinkSys.isDoubleBlink = false;
-                    } else {
-                        blinkSys.state = 'IDLE';
-                        blinkSys.nextBlinkInterval = Math.random() * (blinkSys.maxInterval - blinkSys.minInterval) + blinkSys.minInterval;
-                    }
-                    blinkSys.timer = 0;
-                }
-                blinkSys.eyeOpen = t; // 线性平滑睁眼
-            }
-
-            // 2. 混合写入骨骼参数
-            const core = model.internalModel.coreModel;
-            if (core) {
-                let pIdL = '', pIdR = '';
-                let currentL = 1.0, currentR = 1.0;
-
-                if (typeof core.getParameterValueById === 'function') {
-                    pIdL = 'ParamEyeLOpen'; pIdR = 'ParamEyeROpen';
-                    currentL = core.getParameterValueById(pIdL) ?? 1.0;
-                    currentR = core.getParameterValueById(pIdR) ?? 1.0;
-                } else if (typeof core.getParamFloat === 'function') {
-                    pIdL = 'PARAM_EYE_L_OPEN'; pIdR = 'PARAM_EYE_R_OPEN';
-                    currentL = core.getParamFloat(pIdL) ?? 1.0;
-                    currentR = core.getParamFloat(pIdR) ?? 1.0;
-                }
-
-                if (pIdL && pIdR) {
-                    const finalL = currentL * blinkSys.eyeOpen;
-                    const finalR = currentR * blinkSys.eyeOpen;
-
-                    if (typeof core.setParameterValueById === 'function') {
-                        core.setParameterValueById(pIdL, finalL);
-                        core.setParameterValueById(pIdR, finalR);
-                    } else {
-                        core.setParamFloat(pIdL, finalL);
-                        core.setParamFloat(pIdR, finalR);
-                    }
-                }
-            }
 
             // 只有处于自研模式下，每一帧才去运行模拟力学积分
             if (trackMode === 'bionic_spring') {
