@@ -1,4 +1,5 @@
 #landlord {
+    -webkit-user-select: none;
     user-select: none;
     position: fixed;
     left: 30px;/* 决定live2d位置* 此行靠左，下行靠右/

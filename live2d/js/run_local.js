@@ -499,139 +499,246 @@ function InitPoi() {
         model.on('pointerup', handlePointerUp);
         model.on('pointerupoutside', handlePointerUp);
 
-        // TODO:
         // ==========================================
-        // ★ F. 核心重构：电竞级鼠标视线跟随 (全量完整版)
+        // ★ F. 核心重构：视线跟随多模态调度中枢
         // ==========================================
         model.interactive = true;
         pixiApp.stage.interactive = true;
 
-        // 1. 彻底阉割原生追踪器，防止它暗中捣乱
-        model.focus = () => { };
-        pixiApp.stage.off('pointermove');
+        // 提取后台的追踪模式配置，默认安全降级至原生线性
+        const trackMode = poilive2d_config.focus_track_mode || 'native';
 
-        // 我们自己维护的眼睛坐标记忆体
-        let targetEyeX = 0;
-        let targetEyeY = 0;
-        let currentEyeX = 0;
-        let currentEyeY = 0;
+        if (trackMode === 'bionic_spring') {
+            // ------------------------------------------
+            // 【自研模式】：激活仿生流体弹簧物理引擎
+            // ------------------------------------------
 
-        // 2. 双区混合缓动算法 (计算指令)
-        if (window._poiPointerMoveHandler) {
-            window.removeEventListener('pointermove', window._poiPointerMoveHandler);
-        }
+            // 1. 彻底阉割插件内置的粗暴追踪器，防止两个系统打架
+            model.focus = () => { };
+            pixiApp.stage.off('pointermove');
 
-        window._poiPointerMoveHandler = (event) => {
-            if (!currentLive2dModel) return;
+            // 2. 记忆坐标初始化
+            var targetEyeX = 0, targetEyeY = 0;
+            var currentEyeX = 0, currentEyeY = 0;
 
-            // 缓存真实的鼠标像素坐标供快照读取
-            window._poiRealMouseX = event.clientX;
-            window._poiRealMouseY = event.clientY;
+            if (window._poiPointerMoveHandler) {
+                window.removeEventListener('pointermove', window._poiPointerMoveHandler);
+            }
 
-            const rect = pixiApp.view.getBoundingClientRect();
-            const modelCenterX = rect.left + rect.width / 2;
-            const modelCenterY = rect.top + rect.height / 2;
+            // 3. 动态提取后台的高级物理调节参数（若为空或非法值，自动采用硬编码黄金比例）
+            const DECAY_POWER = parseFloat(poilive2d_config.focus_decay_power) || 2;
+            const SPRING_STIFFNESS = parseFloat(poilive2d_config.focus_spring_stiffness) || 0.05;
+            const SPRING_DAMPING = parseFloat(poilive2d_config.focus_spring_damping) || 0.35;
 
-            const dx = event.clientX - modelCenterX;
-            const dy = event.clientY - modelCenterY;
+            window._poiPointerMoveHandler = (event) => {
+                if (!currentLive2dModel) return;
 
-            // ==========================================
-            // 第一步：获取“最远边距”作为全局唯一的运动基准 (你的方法一)
-            // ==========================================
-            // 分别找出 X 轴和 Y 轴上，距离模型中心最远的那一侧边缘的距离
-            const maxDistX = Math.max(modelCenterX, window.innerWidth - modelCenterX);
-            const maxDistY = Math.max(modelCenterY, window.innerHeight - modelCenterY);
+                window._poiRealMouseX = event.clientX;
+                window._poiRealMouseY = event.clientY;
 
-            // 安全除法，防止模型贴墙时分母为 0
-            const safeMaxX = Math.max(1, maxDistX);
-            const safeMaxY = Math.max(1, maxDistY);
+                const rect = pixiApp.view.getBoundingClientRect();
+                const modelCenterX = rect.left + rect.width / 2;
+                const modelCenterY = rect.top + rect.height / 2;
 
-            window._poiScreenWidth = window.innerWidth;
-            window._poiScreenHeight = window.innerHeight;
-            window._poiSafeMaxX = safeMaxX;
-            window._poiSafeMaxY = safeMaxY;
+                const dx = event.clientX - modelCenterX;
+                const dy = event.clientY - modelCenterY;
 
-            // ==========================================
-            // 第二步：独立计算线性比例 
-            // ==========================================
-            // 此时：长边走到尽头刚好是 1.0 或 -1.0。短边走到尽头只是一个小数 (比如 -0.2)
-            const rawNx = Math.max(-1, Math.min(1, dx / safeMaxX));
-            const rawNy = Math.max(-1, Math.min(1, -(dy / safeMaxY))); // Live2D Y轴向上为正
+                const maxDistX = Math.max(modelCenterX, window.innerWidth - modelCenterX);
+                const maxDistY = Math.max(modelCenterY, window.innerHeight - modelCenterY);
 
-            // 删除球形向量归一化，让 X 和 Y 彻底独立自由运转
+                const safeMaxX = Math.max(1, maxDistX);
+                const safeMaxY = Math.max(1, maxDistY);
 
-            // ==========================================
-            // 第三步：独立套用仿生视觉衰减曲线 (Ease-Out Cubic)
-            // ==========================================
-            // 封装衰减函数：1 - (1 - 绝对值)^3，并保留原始方向(正负号)
-            const applyBionicDecay = (n) => {
-                const absN = Math.abs(n);
-                // 魔法生效点：移动 0.2 (20%) 的距离，结果为 1-(0.8)^3 = 0.488 (约 50%)
-                const eased = 1 - Math.pow(1 - absN, 2);
-                return n < 0 ? -eased : eased;
+                window._poiScreenWidth = window.innerWidth;
+                window._poiScreenHeight = window.innerHeight;
+                window._poiSafeMaxX = safeMaxX;
+                window._poiSafeMaxY = safeMaxY;
+
+                const rawNx = Math.max(-1, Math.min(1, dx / safeMaxX));
+                const rawNy = Math.max(-1, Math.min(1, -(dy / safeMaxY)));
+
+                // 仿生衰减曲线：动态套用后台配置的幂指数驱动
+                const applyBionicDecay = (n) => {
+                    const absN = Math.abs(n);
+                    const eased = 1 - Math.pow(1 - absN, DECAY_POWER);
+                    return n < 0 ? -eased : eased;
+                };
+
+                targetEyeX = applyBionicDecay(rawNx);
+                targetEyeY = applyBionicDecay(rawNy);
             };
 
-            // 分别将 X 和 Y 的比例送入衰减器
-            targetEyeX = applyBionicDecay(rawNx);
-            targetEyeY = applyBionicDecay(rawNy);
-        };
+            window.addEventListener('pointermove', window._poiPointerMoveHandler);
+        } else {
+            // ------------------------------------------
+            // 【原生模式】：剥离所有自定义物理算法，还原最初状态
+            // ------------------------------------------
+            if (window._poiPointerMoveHandler) {
+                window.removeEventListener('pointermove', window._poiPointerMoveHandler);
+            }
+            // 此时不重写 model.focus 且不关闭 stage 的 pointermove，
+            // pixi-live2d-display 的自带原生粘手鼠标跟随便会自动重新全面接管
+        }
 
-        window.addEventListener('pointermove', window._poiPointerMoveHandler);        
 
+        // ==========================================
+        // ★ 仿生眨眼引擎：独立状态机缓存 (带动态配置记忆)
+        // ==========================================
+        if (typeof window._poiBlinkSystem === 'undefined') {
+            window._poiBlinkSystem = {
+                modelRef: null,
+                state: 'IDLE',
+                timer: 0,
+                minInterval: 2000,
+                maxInterval: 5000,
+                nextBlinkInterval: 3000,
+                eyeOpen: 1.0,
+                lastTime: Date.now(),
+                isDoubleBlink: false
+            };
+        }
+        TODO:
         // ==========================================
         // 3. 渲染循环钩子 (将指令注入模型骨骼)
         // ==========================================
+        model.internalModel.off('beforeModelUpdate'); // 清理历史残留钩子
         model.internalModel.on('beforeModelUpdate', () => {
+            const blinkSys = window._poiBlinkSystem;
 
-            // ==========================================
-            // ★ 方案 B：真实物理引擎 (弹簧-质量-阻尼系统)
-            // ==========================================
-            // 初始化全局速度向量 (记录肌肉的动量)
-            if (typeof window._poiVelX === 'undefined') window._poiVelX = 0;
-            if (typeof window._poiVelY === 'undefined') window._poiVelY = 0;
+            // 0. 模型初始化与配置提取
+            if (blinkSys.modelRef !== model) {
+                blinkSys.modelRef = model;
+                blinkSys.minInterval = 2000;
+                blinkSys.maxInterval = 5000;
 
-            // 1. 物理参数调校区 (核心中的核心)
-            // [拉力系数]: 决定鼠标拉动脑袋的力气有多大。数值越大，跟手越紧。
-            const SPRING_STIFFNESS = 0.05;
-            // [摩擦阻尼]: 决定空气的粘滞感。数值越大，越不容易产生弹簧晃动。
-            // 黄金公式：Damping 约等于 2 * Math.sqrt(Stiffness) 时为临界阻尼(最稳)。
-            const SPRING_DAMPING = 0.35;
+                // 【核心修复】：精准击杀原生的 EyeBlink 控制器，彻底防止参数打架！
+                // 这样物理引擎 (Physics) 就能 100% 吃到我们平滑的眨眼曲线
+                if (model.internalModel.eyeBlink) {
+                    model.internalModel.eyeBlink = null;
+                    console.log("[PoiLive2D] 已强制接管原生眨眼控制器，防止打架");
+                }
 
-            // 2. 胡克定律 (F = k * x)
-            // 算出距离偏差，乘以拉力，得到弹簧赋予的原始动力
-            let forceX = (targetEyeX - currentEyeX) * SPRING_STIFFNESS;
-            let forceY = (targetEyeY - currentEyeY) * SPRING_STIFFNESS;
-
-            // 3. 施加阻尼 (a = F - c * v)
-            // 动力减去当前速度带来的摩擦力，得到最终的加速度
-            let accX = forceX - window._poiVelX * SPRING_DAMPING;
-            let accY = forceY - window._poiVelY * SPRING_DAMPING;
-
-            // 4. 积分运算 (速度累加加速度，位置累加速度)
-            window._poiVelX += accX;
-            window._poiVelY += accY;
-
-            // ★ 安全保险：防止极小浮点数导致的物理引擎无限微震计算
-            if (Math.abs(window._poiVelX) < 0.0001 && Math.abs(targetEyeX - currentEyeX) < 0.001) window._poiVelX = 0;
-            if (Math.abs(window._poiVelY) < 0.0001 && Math.abs(targetEyeY - currentEyeY) < 0.001) window._poiVelY = 0;
-
-            // 缓存状态供雷达使用
-            window._poiSpeedCache = {
-                velX: window._poiVelX,
-                velY: window._poiVelY,
-                accX: accX,
-                accY: accY
-            };
-
-            // 5. 肌肉位移生效
-            currentEyeX += window._poiVelX;
-            currentEyeY += window._poiVelY;
-
-            if (model.internalModel.focusController) {
-                model.internalModel.focusController.focus(currentEyeX, currentEyeY, true);
+                const rawJson = model.internalModel.settings.json;
+                if (rawJson && rawJson.Controllers && rawJson.Controllers.EyeBlink) {
+                    const blinkCfg = rawJson.Controllers.EyeBlink;
+                    if (typeof blinkCfg.MinInterval === 'number') blinkSys.minInterval = blinkCfg.MinInterval;
+                    if (typeof blinkCfg.MaxInterval === 'number') blinkSys.maxInterval = blinkCfg.MaxInterval;
+                    console.log(`[PoiLive2D] 提取到专属眨眼频率: ${blinkSys.minInterval} - ${blinkSys.maxInterval} ms`);
+                }
+                blinkSys.nextBlinkInterval = Math.random() * (blinkSys.maxInterval - blinkSys.minInterval) + blinkSys.minInterval;
             }
 
-            // -------- [B] 拖拽形变重绘部分 (保留原逻辑不破坏拖拽交互) --------
+            const now = Date.now();
+            const dt = now - blinkSys.lastTime;
+            blinkSys.lastTime = now;
+
+            // 提取官方黄金节奏参数 (重现物理果冻感的关键)
+            const durationClose = 100;
+            const durationClosed = 50;
+            const durationOpen = 150;
+
+            // 1. 状态机运算：使用严格的时间比率 (t) 来确保精准的时长
+            if (blinkSys.state === 'IDLE') {
+                blinkSys.timer += dt;
+                if (blinkSys.timer >= blinkSys.nextBlinkInterval) {
+                    blinkSys.state = 'CLOSING';
+                    blinkSys.timer = 0;
+                    blinkSys.isDoubleBlink = Math.random() > 0.7; // 30%概率连眨
+                }
+            } else if (blinkSys.state === 'CLOSING') {
+                blinkSys.timer += dt;
+                let t = blinkSys.timer / durationClose;
+                if (t >= 1) {
+                    t = 1;
+                    blinkSys.state = 'CLOSED';
+                    blinkSys.timer = 0;
+                }
+                blinkSys.eyeOpen = 1.0 - t; // 线性平滑闭眼
+            } else if (blinkSys.state === 'CLOSED') {
+                blinkSys.timer += dt;
+                if (blinkSys.timer >= durationClosed) {
+                    blinkSys.state = 'OPENING';
+                    blinkSys.timer = 0;
+                }
+            } else if (blinkSys.state === 'OPENING') {
+                blinkSys.timer += dt;
+                let t = blinkSys.timer / durationOpen;
+                if (t >= 1) {
+                    t = 1;
+                    if (blinkSys.isDoubleBlink) {
+                        blinkSys.state = 'CLOSING';
+                        blinkSys.isDoubleBlink = false;
+                    } else {
+                        blinkSys.state = 'IDLE';
+                        blinkSys.nextBlinkInterval = Math.random() * (blinkSys.maxInterval - blinkSys.minInterval) + blinkSys.minInterval;
+                    }
+                    blinkSys.timer = 0;
+                }
+                blinkSys.eyeOpen = t; // 线性平滑睁眼
+            }
+
+            // 2. 混合写入骨骼参数
+            const core = model.internalModel.coreModel;
+            if (core) {
+                let pIdL = '', pIdR = '';
+                let currentL = 1.0, currentR = 1.0;
+
+                if (typeof core.getParameterValueById === 'function') {
+                    pIdL = 'ParamEyeLOpen'; pIdR = 'ParamEyeROpen';
+                    currentL = core.getParameterValueById(pIdL) ?? 1.0;
+                    currentR = core.getParameterValueById(pIdR) ?? 1.0;
+                } else if (typeof core.getParamFloat === 'function') {
+                    pIdL = 'PARAM_EYE_L_OPEN'; pIdR = 'PARAM_EYE_R_OPEN';
+                    currentL = core.getParamFloat(pIdL) ?? 1.0;
+                    currentR = core.getParamFloat(pIdR) ?? 1.0;
+                }
+
+                if (pIdL && pIdR) {
+                    const finalL = currentL * blinkSys.eyeOpen;
+                    const finalR = currentR * blinkSys.eyeOpen;
+
+                    if (typeof core.setParameterValueById === 'function') {
+                        core.setParameterValueById(pIdL, finalL);
+                        core.setParameterValueById(pIdR, finalR);
+                    } else {
+                        core.setParamFloat(pIdL, finalL);
+                        core.setParamFloat(pIdR, finalR);
+                    }
+                }
+            }
+
+            // 只有处于自研模式下，每一帧才去运行模拟力学积分
+            if (trackMode === 'bionic_spring') {
+                if (typeof window._poiVelX === 'undefined') window._poiVelX = 0;
+                if (typeof window._poiVelY === 'undefined') window._poiVelY = 0;
+
+                // 提取由后台提供（或默认降级）的拉力系数与空气阻尼
+                const SPRING_STIFFNESS = parseFloat(poilive2d_config.focus_spring_stiffness) || 0.05;
+                const SPRING_DAMPING = parseFloat(poilive2d_config.focus_spring_damping) || 0.35;
+
+                let forceX = (targetEyeX - currentEyeX) * SPRING_STIFFNESS;
+                let forceY = (targetEyeY - currentEyeY) * SPRING_STIFFNESS;
+
+                let accX = forceX - window._poiVelX * SPRING_DAMPING;
+                let accY = forceY - window._poiVelY * SPRING_DAMPING;
+
+                window._poiVelX += accX;
+                window._poiVelY += accY;
+
+                if (Math.abs(window._poiVelX) < 0.0001 && Math.abs(targetEyeX - currentEyeX) < 0.001) window._poiVelX = 0;
+                if (Math.abs(window._poiVelY) < 0.0001 && Math.abs(targetEyeY - currentEyeY) < 0.001) window._poiVelY = 0;
+
+                window._poiSpeedCache = { velX: window._poiVelX, velY: window._poiVelY, accX: accX, accY: accY };
+
+                currentEyeX += window._poiVelX;
+                currentEyeY += window._poiVelY;
+
+                if (model.internalModel.focusController) {
+                    model.internalModel.focusController.focus(currentEyeX, currentEyeY, true);
+                }
+            }
+
+            // -------- [B] 以下为拖拽形变重绘与雷达快照部分 (无论什么模式均维持稳定读取) --------
             for (const [paramId, value] of Object.entries(forcedParamValues)) {
                 model.internalModel.coreModel.setParameterValueById(paramId, value);
             }
@@ -639,26 +746,17 @@ function InitPoi() {
             const getSafeParam = (v3Id, v2Id) => {
                 const core = model.internalModel.coreModel;
                 if (!core) return 0;
-                // 检测是否为 Cubism 3/4 核心 (.moc3)
-                if (typeof core.getParameterValueById === 'function') {
-                    return core.getParameterValueById(v3Id) || 0;
-                }
-                // 检测是否为 Cubism 2.1 核心 (.moc)
-                if (typeof core.getParamFloat === 'function') {
-                    return core.getParamFloat(v2Id) || 0;
-                }
+                if (typeof core.getParameterValueById === 'function') return core.getParameterValueById(v3Id) || 0;
+                if (typeof core.getParamFloat === 'function') return core.getParamFloat(v2Id) || 0;
                 return 0;
             };
 
-            // 提取实况 (同时传入新旧两种标准命名)
             const aX = getSafeParam('ParamAngleX', 'PARAM_ANGLE_X');
             const aY = getSafeParam('ParamAngleY', 'PARAM_ANGLE_Y');
             const eX = getSafeParam('ParamEyeBallX', 'PARAM_EYE_BALL_X');
             const eY = getSafeParam('ParamEyeBallY', 'PARAM_EYE_BALL_Y');
-            
-            // ★ 新增：每一帧都把最新的骨骼实况写入全局缓存，防止在其他线程读取为0
-            window._poiCachedBones = { aX, aY, eX, eY };           
-            
+
+            window._poiCachedBones = { aX, aY, eX, eY };
         });
 
         // 将事件绑定到 window，实现鼠标离开画布依然能追踪

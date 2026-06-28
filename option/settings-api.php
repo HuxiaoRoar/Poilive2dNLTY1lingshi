@@ -81,20 +81,16 @@ class PoiLive2D_Settings {
         $this->add_field('poilive2d-style', 'section_style_role', 'drag_mode', '拖拽方式', 'select_callback', ['free_restore' => '自由拖拽（松手复原）','free_keep' => '自由拖拽（松手固定）','horizontal' => '水平拖拽','vertical' => '垂直拖拽','disable' => '禁用']);        
 
 
-        $this->add_field('poilive2d-style', 'section_style_role', 'texture_record', '记录材质选择', 'radio_callback', ['1' => '是（下次进入，材质不变）', '0' => '否（下次进入，材质切换）']);
-
-
 
         $this->add_field('poilive2d-style', 'section_style_role', 'role_size', '角色大小', 'size_callback', '宽度 x 高度');
         $this->add_field('poilive2d-style', 'section_style_role', 'role_hide_width', '小于指定宽度隐藏角色', 'number_callback', '设置为 0 时，角色常驻，不隐藏');
 
         $this->add_field('poilive2d-style', 'section_style_role', 'role_dock', '角色水平贴边选择', 'select_callback', ['left' => '靠左', 'right' => '靠右']);
-        $this->add_field('poilive2d-style', 'section_style_role', 'role_margin', '角色水平页面边距(像素)', 'number_callback');
+        $this->add_field('poilive2d-style', 'section_style_role', 'role_margin', '角色水平页面边距(像素)', 'number_callback');       
 
-        // 新增：垂直方向的贴边与边距控制
+
         $this->add_field('poilive2d-style', 'section_style_role', 'role_v_dock', '角色垂直贴边选择', 'select_callback', ['bottom' => '靠下', 'top' => '靠上']);
         $this->add_field('poilive2d-style', 'section_style_role', 'role_v_margin', '角色垂直页面边距(像素)', 'number_callback');
-
         add_settings_section('section_style_btn', '按钮样式设置：', null, 'poilive2d-style');
         $this->add_field('poilive2d-style', 'section_style_btn', 'btn_size', '按钮大小(像素)', 'number_callback');
         $this->add_field('poilive2d-style', 'section_style_btn', 'btn_line_height', '按钮行高(像素)', 'number_callback');
@@ -172,6 +168,34 @@ class PoiLive2D_Settings {
         /* ==========================================================================
          * TAB 4: 交互设置 (poilive2d-interactive)
          * ========================================================================== */ 
+
+        add_settings_section('section_interactive_track', '鼠标视线追踪设置：', null, 'poilive2d-interactive');
+        
+        // 1. 模式选择下拉菜单
+        $this->add_field('poilive2d-interactive', 'section_interactive_track', 'focus_track_mode', '鼠标视线追踪方式', 'select_callback', [            
+            'bionic_spring' => '弹簧阻尼（重写的能调参数）',
+            'native'        => '标准线性（插件原生自带）'
+        ]);
+        
+// 2. 隐藏联动参数 1：曲线指数
+        $this->add_field('poilive2d-interactive', 'section_interactive_track', 'focus_decay_power', '衰减曲线指数', 'text_desc_callback', [
+            'desc'    => '推荐范围 1 - 4，默认 2。',
+            'tooltip' => 'n次缓出曲线y=1−(1−x)ⁿ。<br><br>•数值越大：鼠标在角色中心微动时转向越灵敏，移向屏幕边缘时越平缓。<br>•数值越小：鼠标在角色中心微动时转向越迟缓，移向屏幕边缘时越灵敏。'
+        ]);
+        
+        // 3. 隐藏联动参数 2：弹簧刚度 
+        $this->add_field('poilive2d-interactive', 'section_interactive_track', 'focus_spring_stiffness', '弹簧拉力系数', 'text_desc_callback', [
+            'desc'    => '推荐范围 0.01 - 0.2，默认 0.05。',
+            'tooltip' => '控制追随鼠标的“牵引力度”。<br><br>• 数值越大：跟进越快、越干脆。<br>• 数值越小：跟进越迟缓、有拖拽感。'
+        ]);
+        
+        // 4. 隐藏联动参数 3：摩擦阻尼
+        $this->add_field('poilive2d-interactive', 'section_interactive_track', 'focus_spring_damping', '摩擦阻尼系数', 'text_desc_callback', [
+            'desc'    => '推荐范围 0.1 - 0.8，默认 0.35。',
+            'tooltip' => '控制到达目标时的“刹车阻力”。<br><br>• 数值越大：刹车越稳，越不容易产生弹簧晃动。<br>• 数值越小：到达后产生的“果冻回弹”与晃动感越强。<br><br>• 阻尼系数约等于 2*√(拉力系数) 时，弹簧系统为临界阻尼状态，回弹最短且不震荡。<br>• 小于临界阻尼：欠阻尼，回弹震荡。<br>• 大于临界阻尼：过阻尼，回弹缓慢。'
+        ]);
+        
+
         add_settings_section('section_interactive_other', '进出交互设置：', null, 'poilive2d-interactive');
         $this->add_field('poilive2d-interactive', 'section_interactive_other', 'mouse_copy_msgs', '复制信息时的提示', 'repeater_single_callback');
         $this->add_field('poilive2d-interactive', 'section_interactive_other', 'mouse_hide_msgs', '隐藏角色的提示', 'repeater_single_callback');
@@ -368,12 +392,54 @@ class PoiLive2D_Settings {
         echo '</select>';
     }
 
-    public function text_callback($params) {
-        $id = $params['id'];
-        $val = $this->get_val($id, '');
-        echo '<input type="text" name="ui_temp" name="poilive2d_options['.$id.']" id="'.$id.'" value="'.esc_attr($val).'" class="regular-text">';
+    // 我们专属的：支持完整备注 + 优雅悬浮提示框 (Tooltip) 的增强型文本输入组件
+    public function text_desc_callback($args) {
+        $val = $this->get_val($args['id']);
+        
+        // 1. 智能解析参数：分离 常驻说明(desc) 和 悬浮提示(tooltip)
+        $desc = '';
+        $tooltip = '';
+        if (isset($args['args'])) {
+            if (is_array($args['args'])) {
+                // 如果传入的是数组，分别提取
+                $desc = isset($args['args']['desc']) ? $args['args']['desc'] : '';
+                $tooltip = isset($args['args']['tooltip']) ? $args['args']['tooltip'] : '';
+            } else {
+                // 为了兼容以前的代码，如果只传了字符串，就当做常驻底部说明
+                $desc = $args['args'];
+            }
+        }
+        
+        // 2. 动态注入悬浮气泡的高级 CSS（使用 static 保证一页只加载一次，极致优化）
+        static $tooltip_css_printed = false;
+        if (!$tooltip_css_printed) {
+            echo '<style>
+            .poi-tooltip-icon { position: relative; display: inline-flex; align-items: center; margin-left: 8px; color: #2271b1; cursor: help; vertical-align: middle; }
+            .poi-tooltip-icon .poi-tooltip-box { visibility: hidden; width: 260px; background-color: #1e1e1e; color: #fff; text-align: left; border-radius: 6px; padding: 10px 14px; position: absolute; z-index: 99999; bottom: 130%; left: 50%; transform: translateX(-50%); opacity: 0; transition: opacity 0.3s, bottom 0.3s; font-size: 13px; line-height: 1.5; font-weight: 400; box-shadow: 0 4px 12px rgba(0,0,0,0.15); pointer-events: none; }
+            .poi-tooltip-icon .poi-tooltip-box::after { content: ""; position: absolute; top: 100%; left: 50%; margin-left: -6px; border-width: 6px; border-style: solid; border-color: #1e1e1e transparent transparent transparent; }
+            .poi-tooltip-icon:hover .poi-tooltip-box { visibility: visible; opacity: 1; bottom: 150%; }
+            </style>';
+            $tooltip_css_printed = true;
+        }
+        
+        // 3. 渲染核心输入框
+        echo '<input type="text" name="poilive2d_options[' . $args['id'] . ']" value="' . esc_attr($val) . '" class="regular-text" style="vertical-align: middle;" />';
+        
+        // 4. 如果存在悬浮提示，渲染 WordPress 官方内置的问号(dashicons-editor-help)，并绑定悬浮气泡
+        if (!empty($tooltip)) {
+            echo '<div class="poi-tooltip-icon">
+                    <span class="dashicons dashicons-editor-help"></span>
+                    <div class="poi-tooltip-box">' . $tooltip . '</div>
+                  </div>';
+        }
+        
+        // 5. 如果存在常驻备注，渲染在最下方
+        if (!empty($desc)) {
+            echo '<p class="description" style="margin-top: 6px; color: #666;">' . $desc . '</p>';
+        }
     }
 
+    
 public function number_callback($params) {
         $id = $params['id'];
         

@@ -620,11 +620,35 @@ jQuery(document).ready(function ($) {
     // 核心：在页面初始化加载时，以及绑定完所有事件后，立刻拉起一次触发行内显隐
     filterTipRows($('#hitokoto_api').val());
 
+    // ==========================================
+    // 交互显隐：高级视线追踪参数的条件触发模块
+    // ==========================================
 
+    // 1. 精准利用表单文本特征，反向捕获对应的整行 tr 渲染节点
+    var $decayRow = $('th:contains("衰减曲线指数")').closest('tr');
+    var $stiffnessRow = $('th:contains("弹簧拉力系数")').closest('tr');
+    var $dampingRow = $('th:contains("摩擦阻尼系数")').closest('tr');
 
+    // 2. 显隐状态过滤器
+    function filterTrackRows(trackMode) {
+        if (trackMode === 'bionic_spring') {
+            $decayRow.show();
+            $stiffnessRow.show();
+            $dampingRow.show();
+        } else {  
+            $decayRow.hide();
+            $stiffnessRow.hide();
+            $dampingRow.hide();
+        }
+    }
 
+    // 3. 挂载下拉菜单的实时切换事件
+    $('#focus_track_mode').on('change', function () {
+        filterTrackRows($(this).val());
+    });
 
-
+    // 4. 后台页面初始化载入时，立刻拉起一次状态判断
+    filterTrackRows($('#focus_track_mode').val());
 
 
     
