@@ -342,6 +342,109 @@ function InitPoi() {
 
         
         // ==========================================
+        // ★ 移花接木：为缺失 Group 的 LPV 模型注入自定义眨眼组件
+        // ==========================================
+        if (!model.internalModel.eyeBlink) {
+            //console.log("🛠️ [眨眼系统] 检测到当前模型未配置官方 EyeBlink 组，正在注入自研拟人眨眼状态机...");
+
+            // 1. 彻底抛弃 LPV 默认垃圾频率，统一采用黄金自然频率 (未来可对接 PHP 后端设置)
+            let lpvConfig = {
+                blinkMinInterval: 3000,  // 最小睁眼等待时间
+                blinkMaxInterval: 5000,  // 最大睁眼等待时间
+                closingDuration: 100,    // 闭眼动作耗时
+                closedDuration: 60,      // 闭眼完全闭合保持耗时
+                openingDuration: 150     // 睁眼动作耗时
+            };
+
+            let targetIds = ['ParamEyeLOpen', 'ParamEyeROpen'];
+
+            const rawJson = model.internalModel.settings.json || model.internalModel.settings || {};
+            const controllers = rawJson.Controllers || rawJson.controllers || {};
+
+            // 2. 仅提取目标骨骼，不再信任并提取任何时间参数
+            if (controllers.EyeBlink && controllers.EyeBlink.Enabled !== false) {
+                const blinkCtrl = controllers.EyeBlink;
+                if (Array.isArray(blinkCtrl.Items) && blinkCtrl.Items.length > 0) {
+                    targetIds = blinkCtrl.Items.map(item => item.Id || item.id).filter(id => id);
+                }
+               // console.log(`🎯 [眨眼系统] 提取到目标骨骼:`, targetIds);
+            }
+
+            function getNextBlinkInterval() {
+                return Math.random() * (lpvConfig.blinkMaxInterval - lpvConfig.blinkMinInterval) + lpvConfig.blinkMinInterval;
+            }
+
+            // 3. 强行“夺舍”，注入带有双重连眨机制的高阶状态机
+            model.internalModel.eyeBlink = {
+                eyeState: 0,
+                timer: getNextBlinkInterval(),
+                isDoubleBlinking: false, // 连眨状态锁
+
+                updateParameters: function (coreModel, deltaTimeSeconds) {
+                    let dt = deltaTimeSeconds * 1000;
+
+                    if (typeof dt !== 'number' || isNaN(dt)) return;
+
+                    switch (this.eyeState) {
+                        case 0:
+                            this.timer -= dt;
+                            if (this.timer <= 0) {
+                                this.eyeState = 1;
+                                this.timer = lpvConfig.closingDuration;
+                            }
+                            break;
+
+                        case 1:
+                            this.timer -= dt;
+                            let closingProgress = Math.max(0, this.timer / lpvConfig.closingDuration);
+
+                            targetIds.forEach(id => coreModel.setParameterValueById(id, closingProgress));
+
+                            if (this.timer <= 0) {
+                                this.eyeState = 2;
+                                this.timer = lpvConfig.closedDuration;
+                            }
+                            break;
+
+                        case 2:
+                            this.timer -= dt;
+                            targetIds.forEach(id => coreModel.setParameterValueById(id, 0));
+
+                            if (this.timer <= 0) {
+                                this.eyeState = 3;
+                                // 连眨的第二下稍微加快睁眼速度
+                                this.timer = this.isDoubleBlinking ? lpvConfig.openingDuration * 0.8 : lpvConfig.openingDuration;
+                            }
+                            break;
+
+                        case 3:
+                            this.timer -= dt;
+                            let currentOpening = this.isDoubleBlinking ? (lpvConfig.openingDuration * 0.8) : lpvConfig.openingDuration;
+                            let openingProgress = Math.max(0, 1 - (this.timer / currentOpening));
+
+                            targetIds.forEach(id => coreModel.setParameterValueById(id, openingProgress));
+
+                            if (this.timer <= 0) {
+                               
+                                if (!this.isDoubleBlinking && Math.random() < 0.1) {
+                                    this.isDoubleBlinking = true;
+                                    this.eyeState = 0;
+                                    this.timer = 50; 
+                                } else {
+                                    this.isDoubleBlinking = false;
+                                    this.eyeState = 0;
+                                    this.timer = getNextBlinkInterval(); // 恢复漫长休眠
+                                }
+                            }
+                            break;
+                    }
+                }
+            };
+        } else {
+            //console.log("ℹ️ [眨眼系统] 当前模型自带官方 EyeBlink 组，已放权。");
+        }
+
+        // ==========================================
         // ★ 2. 状态机：拦截并重构交互事件 (带详尽调试版)
         // ==========================================
         let pointerDownContext = null;
@@ -587,7 +690,6 @@ function InitPoi() {
         // ==========================================
         model.internalModel.off('beforeModelUpdate'); // 清理历史残留钩子
         model.internalModel.on('beforeModelUpdate', () => {
-            const blinkSys = window._poiBlinkSystem;
 
             // 只有处于自研模式下，每一帧才去运行模拟力学积分
             if (trackMode === 'bionic_spring') {
