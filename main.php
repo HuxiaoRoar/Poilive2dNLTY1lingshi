@@ -167,15 +167,31 @@ function live2d_head()
             border-color: {$b_border} !important;
             box-shadow: 0 3px 15px 2px {$b_shadow} !important;
             color: {$b_color} !important;
+            -webkit-backdrop-filter: blur(5px);
             backdrop-filter: blur(5px);
+        }";        
+       
+       $css .= ".poi-corner-btn { 
+            min-height: {$btn_lh}px !important; 
+            line-height: {$btn_lh}px !important; 
+            border-color: {$b_border} !important;
+            background: {$btn_bg} !important; 
+            -webkit-backdrop-filter: blur(5px);
+            backdrop-filter: blur(5px);
+            box-shadow: 0 3px 6px  {$b_shadow} !important;
+            color: {$b_color} !important;
         }";
         
-       
-        $css .= ".l2d-action:hover, .l2d-action-L:hover, .show-button:hover { 
+        // 继承后台设置的：鼠标悬浮色
+        $css .= ".poi-corner-btn:hover { 
+            min-height: {$btn_lh}px !important; 
+            line-height: {$btn_lh}px !important; 
+            border-color: {$b_border} !important;
             background: {$btn_hover} !important; 
             border-color: {$b_border} !important;
             color: {$b_color} !important;
-            
+            -webkit-backdrop-filter: blur(5px);
+            backdrop-filter: blur(5px);
         }";
 
         $css .= '</style>';

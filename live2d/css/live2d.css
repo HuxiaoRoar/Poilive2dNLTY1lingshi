@@ -90,6 +90,7 @@
 }
 
 .show-button:hover {
+    
     border: 1px solid #000000;
     background: #f4f6f8;
 }
@@ -115,6 +116,7 @@
 }
 
 .l2d-action-L{
+    transform: scale(1.1);
     position: absolute;
 	list-style: none;
     top:10px;
@@ -135,6 +137,7 @@
 }
 /*.hide-button:hover,.switch-button:hover,.sing-button:hover */
 .l2d-action:hover .l2d-action-L:hover{
+    
     border: 1px solid rgba(102,204,255,.6);
     background: rgba(216, 213, 210, 0.95);
     color: rgba(1, 47, 107, 0.8); 
@@ -367,11 +370,79 @@ display: flex;
     /* 现代浏览器原生支持，一键变色 */
 }
 
+#poi-corner-tools {
+    position: absolute;
+    bottom: 2px;
+    /* 距离底部稍微留一点呼吸感 */
+    display: none;
+    flex-direction: row;;
+    gap: 8px;
+    /* 两个按钮之间的间距 */
+    z-index: 100;
+}
 
+/* 20x20 小巧精致的按钮样式 */
+.poi-corner-btn {
+    width: 22px;
+    height: 22px;
+    border-radius: 6px;
+    border: 1px solid transparent;
+    /* 基础线框，颜色由PHP注入 */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    -webkit-user-select: none;
+    user-select: none;
 
+}
 
+.poi-corner-btn:hover {
+    transform: scale(1.1);
+    /* 鼠标悬停微微放大 */
+}
 
+/* VTS 弹窗关闭按钮 */
+#vts-dialog-close {
+    position: absolute;
+    top: 8px;
+    right: 12px;
+    cursor: pointer;
+    font-size: 18px;
+    font-weight: bold;
+    opacity: 0.6;
+    transition: all 0.2s ease;
+    line-height: 1;
+    z-index: 10;
+    color: #fff;
+}
 
+/* 鼠标悬停时的天依蓝发光效果 */
+#vts-dialog-close:hover {
+    opacity: 1;
+    color: #66ccff;
+}/* VTS 弹窗关闭按钮 */
+#vts-dialog-close {
+    position: absolute;
+    top: 8px;
+    right: 12px;
+    cursor: pointer;
+    font-size: 18px;
+    font-weight: bold;
+    opacity: 0.6;
+    transition: all 0.2s ease;
+    line-height: 1;
+    z-index: 10;
+    color: #fff;
+}
+
+/* 鼠标悬停时的天依蓝发光效果 */
+#vts-dialog-close:hover {
+    opacity: 1;
+    color: #66ccff;
+}
 
 @keyframes shake {
     2% {

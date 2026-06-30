@@ -113,8 +113,7 @@ function initLive2d() {
             if (poilive2d_config.btn_menu === '1') rightMenuHtml += '<li class="l2d-action" id="catalog-button">目录</li>';
             if (poilive2d_config.btn_model === '1') rightMenuHtml += '<li class="l2d-action" id="change-button">变身</li>';
             if (poilive2d_config.btn_texture === '1') rightMenuHtml += '<li class="l2d-action" id="switch-button">变装</li>';
-            if (poilive2d_config.btn_hitokoto === '1') rightMenuHtml += '<li class="l2d-action" id="hitokoto-button">一言</li>';
-            rightMenuHtml += '<li class="l2d-action" id="adjust-button">调整</li>';
+            if (poilive2d_config.btn_hitokoto === '1') rightMenuHtml += '<li class="l2d-action" id="hitokoto-button">一言</li>';            
         } else {
             if (poilive2d_config.btn_model === '1') leftMenuHtml += '<li class="l2d-action-L" id="change-button">变身</li>';
             if (poilive2d_config.btn_texture === '1') leftMenuHtml += '<li class="l2d-action-L" id="switch-button">变装</li>';
@@ -122,8 +121,7 @@ function initLive2d() {
 
             if (poilive2d_config.btn_hide === '1') rightMenuHtml += '<li class="l2d-action" id="hide-button">隐藏</li>';
             if (poilive2d_config.btn_sing === '1') rightMenuHtml += '<li class="l2d-action" id="sing-button" onclick="getsong();">Sing</li>';
-            if (poilive2d_config.btn_menu === '1') rightMenuHtml += '<li class="l2d-action" id="catalog-button">目录</li>';
-            rightMenuHtml += '<li class="l2d-action" id="adjust-button">调整</li>';
+            if (poilive2d_config.btn_menu === '1') rightMenuHtml += '<li class="l2d-action" id="catalog-button">目录</li>';            
         }
 
         if (leftMenuHtml) $('#landlord').append('<ul class="l2d-menu l2d-menu-left">' + leftMenuHtml + '</ul>');
@@ -240,7 +238,10 @@ function initLive2d() {
         });
     }
 
-    $('#landlord').hover(() => { $('.l2d-menu').fadeIn(200).css('display', 'flex'); }, () => { $('.l2d-menu').fadeOut(200); });
+    $('#landlord').hover(
+        () => { $('.l2d-menu, #poi-corner-tools').fadeIn(200).css('display', 'flex'); },
+        () => { $('.l2d-menu, #poi-corner-tools').fadeOut(200); }
+    );
 
     $('#hide-button').off('click').on('click', () => {
         var msgs = poilive2d_config.mouse_hide_msgs;
@@ -305,49 +306,63 @@ function initLive2d() {
         // ==========================================
         // 1. 动态生成专属拖拽手柄 (物理隔离的载体)
         // ==========================================
+        
+        // ==========================================
+        // ★ 新增：角落独立工具栏 (包裹拖拽手柄与微调齿轮)
+        // ==========================================
+        var isDockRight = (typeof poilive2d_config !== 'undefined' && poilive2d_config.role_dock === 'right');
+
+        var cornerTools = document.createElement('div');
+        cornerTools.id = 'poi-corner-tools';
+        // 智能避让：角色靠右贴边，控件就去左下角；靠左，就去右下角
+        if (isDockRight) {
+            cornerTools.style.left = '2px';
+        } else {
+            cornerTools.style.right = '2px';
+        }
+
+        // 1. 专属拖拽手柄
         var dragHandle = document.createElement('div');
         dragHandle.id = 'poi-drag-handle';
-        dragHandle.className = 'l2d-action'; // 复用你的按钮样式 (背景、高斯模糊等)
+        dragHandle.className = 'poi-corner-btn'; // 应用刚写的 20x20 样式
 
-        // 为了美观，给手柄加一点基础内联排版（可根据你的实际菜单结构调整）
-        dragHandle.style.cssText = 'display: flex; align-items: center; justify-content: center; user-select: none; font-size: 16px; margin-bottom: 5px;';
-
-        // ==========================================
-        // 2. 根据拖拽模式，赋予不同的图标和鼠标指针
-        // ==========================================
         var isFree = (dragMode === 'free_restore' || dragMode === 'free_keep');
         var isHorizontal = (dragMode === 'horizontal');
         var isVertical = (dragMode === 'vertical');
 
         if (isFree) {
-            dragHandle.innerHTML = '<span>✥</span>'; // 十字方向标
+            dragHandle.innerHTML = '✥';
             dragHandle.style.cursor = 'move';
             dragHandle.title = "按住自由拖动";
         } else if (isHorizontal) {
-            dragHandle.innerHTML = '<span>↔</span>'; // 左右水平标
+            dragHandle.innerHTML = '↔';
             dragHandle.style.cursor = 'ew-resize';
             dragHandle.title = "按住水平拖动";
         } else if (isVertical) {
-            dragHandle.innerHTML = '<span>↕︎</span>'; // 上下垂直标
+            dragHandle.innerHTML = '↕︎';
             dragHandle.style.cursor = 'ns-resize';
             dragHandle.title = "按住垂直拖动";
         } else {
-            dragHandle.innerHTML = '<span>🔒</span>'; // 锁头
+            dragHandle.innerHTML = '🔒';
             dragHandle.style.cursor = 'not-allowed';
             dragHandle.title = "位置已锁定";
         }
 
-        // 将手柄挂载到页面上。如果你有 .l2d-menu 菜单容器，就塞进菜单里；否则直接丢进 landlord
-        var menuContainer = landlordDom.querySelector('.l2d-menu');
-        if (menuContainer) {
-            menuContainer.insertBefore(dragHandle, menuContainer.firstChild); // 放在菜单最上面
-        } else {
-            // 如果没有独立菜单容器，强制绝对定位在左上角附近
-            dragHandle.style.position = 'absolute';
-            dragHandle.style.top = '10px';
-            dragHandle.style.left = '-35px';
-            landlordDom.appendChild(dragHandle);
+        // 2. 微调面板触发齿轮
+        var adjustBtn = document.createElement('div');
+        adjustBtn.id = 'adjust-button';
+        adjustBtn.className = 'poi-corner-btn';
+        adjustBtn.innerHTML = '⚙️';
+        adjustBtn.title = "模型微调";
+
+        // 3. 将按钮塞进工具栏，然后将工具栏挂载到容器底座上
+        if (dragMode !== 'disable') {
+            cornerTools.appendChild(dragHandle);
         }
+        cornerTools.appendChild(adjustBtn);
+        landlordDom.appendChild(cornerTools);
+
+
 
         // ==========================================
         // 3. 只有非 disable 状态，才挂载拖拽核心事件
@@ -451,17 +466,17 @@ function initLive2d() {
             </div>
             
             <div class="poi-tf-row">
-                <div><span>缩放比例</span> <span id="poi-tf-val-scale">1.00</span></div>
+                <div><span>缩放比例</span> <input type="number" id="poi-tf-val-scale" step="0.01" style="width:45px; background:rgba(0,0,0,0.2); border:1px solid rgba(102,204,255,0.3); color:#fff; border-radius:4px; text-align:center; outline:none; font-family:inherit; padding:2px;"></div>
                 <input type="range" id="poi-tf-range-scale" min="0.3" max="3.0" step="0.02">
             </div>
             
             <div class="poi-tf-row">
-                <div><span>X轴偏移</span> <span id="poi-tf-val-x">0</span></div>
+                <div><span>X轴偏移</span> <input type="number" id="poi-tf-val-x" step="1" style="width:45px; background:rgba(0,0,0,0.2); border:1px solid rgba(102,204,255,0.3); color:#fff; border-radius:4px; text-align:center; outline:none; font-family:inherit; padding:2px;"></div>
                 <input type="range" id="poi-tf-range-x" min="-400" max="400" step="2">
             </div>
             
             <div class="poi-tf-row">
-                <div><span>Y轴偏移</span> <span id="poi-tf-val-y">0</span></div>
+                <div><span>Y轴偏移</span> <input type="number" id="poi-tf-val-y" step="1" style="width:45px; background:rgba(0,0,0,0.2); border:1px solid rgba(102,204,255,0.3); color:#fff; border-radius:4px; text-align:center; outline:none; font-family:inherit; padding:2px;"></div>
                 <input type="range" id="poi-tf-range-y" min="-400" max="400" step="2">
             </div>
             
@@ -475,72 +490,92 @@ function initLive2d() {
     }
 
     // --- 交互事件绑定 ---
-
-    // 1. 同步数据：从 window._poiTransform 读取当前值到 UI 滑动条
-    function syncTransformUIToData() {
+    // 1. 将同步函数挂载到 window 上，成为全局可用（方便 run_local.js 唤醒它）
+    window.syncTransformUIToData = function () {
         if (!window._poiTransform) return;
         $('#poi-tf-range-scale').val(window._poiTransform.scale);
-        $('#poi-tf-val-scale').text(window._poiTransform.scale.toFixed(2));
+        $('#poi-tf-val-scale').val(window._poiTransform.scale.toFixed(2)); // 改用 .val()
 
         $('#poi-tf-range-x').val(window._poiTransform.offsetX);
-        $('#poi-tf-val-x').text(Math.round(window._poiTransform.offsetX));
+        $('#poi-tf-val-x').val(Math.round(window._poiTransform.offsetX));
 
         $('#poi-tf-range-y').val(window._poiTransform.offsetY);
-        $('#poi-tf-val-y').text(Math.round(window._poiTransform.offsetY));
-    }
+        $('#poi-tf-val-y').val(Math.round(window._poiTransform.offsetY));
+    };
 
     // 2. 监听按钮：打开面板
     $(document).on('click', '#adjust-button', function () {
-        syncTransformUIToData(); // 打开前先同步最新数据 (防止被Shift操作改过)
-        $('#poi-transform-panel').fadeIn(200);
+        var $panel = $('#poi-transform-panel');
+
+        if ($panel.is(':visible')) {
+            // 如果面板当前是开着的，点击就把它关掉
+            $panel.fadeOut(200);
+        } else {
+            // 如果面板是关着的，先抓取最新数据同步，再把它打开
+            if (window.syncTransformUIToData) window.syncTransformUIToData();
+            $panel.fadeIn(200);
+        }
     });
 
-    // 3. 监听按钮：关闭面板
     $(document).on('click', '#poi-tf-close', function () {
         $('#poi-transform-panel').fadeOut(200);
     });
 
-    // 4. 监听滑动条实时变动 (Input 事件)
-    $('#poi-tf-range-scale, #poi-tf-range-x, #poi-tf-range-y').on('input', function () {
+    // 3. 当拖动滑动条时 -> 改变文本框数值 -> 改变模型
+    $(document).on('input', '#poi-tf-range-scale, #poi-tf-range-x, #poi-tf-range-y', function () {
         if (!window._poiTransform) return;
 
-        // 抓取UI数值
         let scale = parseFloat($('#poi-tf-range-scale').val());
         let x = parseFloat($('#poi-tf-range-x').val());
         let y = parseFloat($('#poi-tf-range-y').val());
 
-        // 更新文字显示
-        $('#poi-tf-val-scale').text(scale.toFixed(2));
-        $('#poi-tf-val-x').text(Math.round(x));
-        $('#poi-tf-val-y').text(Math.round(y));
+        // 同步给输入框
+        $('#poi-tf-val-scale').val(scale.toFixed(2));
+        $('#poi-tf-val-x').val(Math.round(x));
+        $('#poi-tf-val-y').val(Math.round(y));
 
-        // 写入管家并执行重绘
         window._poiTransform.scale = scale;
         window._poiTransform.offsetX = x;
         window._poiTransform.offsetY = y;
-
         window._poiTransform.apply();
     });
 
-    // 5. 监听滑动条松开 (Change 事件，只在松手时保存到本地，节约性能)
-    $('#poi-tf-range-scale, #poi-tf-range-x, #poi-tf-range-y').on('change', function () {
+    // 4. 当直接在文本框里打字输入时 -> 改变滑动条 -> 改变模型
+    $(document).on('input', '#poi-tf-val-scale, #poi-tf-val-x, #poi-tf-val-y', function () {
+        if (!window._poiTransform) return;
+
+        // 抓取打字输入的数值，如果输入为空或乱码，给个默认值保底
+        let scale = parseFloat($('#poi-tf-val-scale').val()) || 1.0;
+        let x = parseFloat($('#poi-tf-val-x').val()) || 0;
+        let y = parseFloat($('#poi-tf-val-y').val()) || 0;
+
+        // 同步给滑动条
+        $('#poi-tf-range-scale').val(scale);
+        $('#poi-tf-range-x').val(x);
+        $('#poi-tf-range-y').val(y);
+
+        window._poiTransform.scale = scale;
+        window._poiTransform.offsetX = x;
+        window._poiTransform.offsetY = y;
+        window._poiTransform.apply();
+    });
+
+    // 5. 松手或输入完成后保存本地数据
+    $(document).on('change', '#poi-tf-range-scale, #poi-tf-range-x, #poi-tf-range-y, #poi-tf-val-scale, #poi-tf-val-x, #poi-tf-val-y', function () {
         if (window._poiTransform) window._poiTransform.save();
     });
 
-    // 6. 恢复默认设置按钮
-    $('#poi-tf-reset').hover(
-        function () { $(this).css('background', 'rgba(255,255,255,0.4)'); },
-        function () { $(this).css('background', 'rgba(255,255,255,0.2)'); }
-    ).on('click', function () {
+    // 6. 恢复默认设置按钮逻辑
+    $(document).on('click', '#poi-tf-reset', function () {
         if (!window._poiTransform) return;
-
         window._poiTransform.scale = 1.0;
         window._poiTransform.offsetX = 0;
         window._poiTransform.offsetY = 0;
-
         window._poiTransform.apply();
         window._poiTransform.save();
-        syncTransformUIToData(); // UI回弹到中间
+
+        if (window.syncTransformUIToData) window.syncTransformUIToData(); // 回弹UI
+        $('#poi-transform-panel').attr('style', `display:block; ${defaultPosStyle}`);
     });
 
     // --- ★ 新增：浮框自由拖拽逻辑 ---

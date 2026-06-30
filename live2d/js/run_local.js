@@ -12,10 +12,16 @@ function InitPoi() {
     if (!document.getElementById('vts-dialog')) {
         $('#landlord').append(`
                 <div id="vts-dialog">
+                    <span id="vts-dialog-close" title="关闭面板">×</span>
                     <div id="vts-text"></div>
                     <div id="vts-choices"></div>
                 </div>
-            `);
+            `
+            
+        );
+        $(document).on('click', '#vts-dialog-close', function () {
+            $('#vts-dialog').fadeOut(200);
+        });
     }
     
     const canvas = document.getElementById('live2d');
@@ -201,6 +207,8 @@ function InitPoi() {
         // 4 & 5. 首次渲染应用参数
         window._poiTransform.apply();
 
+        if (window.syncTransformUIToData) window.syncTransformUIToData();
+
         // ==========================================
         // ★ A 方案：Shift + 滚轮实现模型独立缩放
         // ==========================================
@@ -217,6 +225,7 @@ function InitPoi() {
 
                 window._poiTransform.apply();
                 window._poiTransform.save();
+                if (window.syncTransformUIToData) window.syncTransformUIToData();
             }
         });
 
@@ -314,6 +323,9 @@ function InitPoi() {
                 if (hasText) $text.text(mText).show();
                 else $text.hide();
 
+                if (hasChoices) $('#vts-dialog-close').show();
+                else $('#vts-dialog-close').hide();
+
                 if (hasChoices) {
                     mChoices.forEach(choice => {
                         const cText = choice.Text || choice.text;
@@ -334,7 +346,7 @@ function InitPoi() {
 
                 if (vtsTimeout) clearTimeout(vtsTimeout);
 
-                if (!hasChoices) $dialog.css('bottom', '40px');
+                if (!hasChoices) $dialog.css('bottom', '10px');
                 else $dialog.css('bottom', '5px');
 
                 const delay = motionDef.TextDelay || motionDef.text_delay || 0;
@@ -593,6 +605,7 @@ function InitPoi() {
                 window._poiTransform.offsetY = shiftDragCtx.initOffsetY + dy;
 
                 window._poiTransform.apply(); // 实时应用
+                if (window.syncTransformUIToData) window.syncTransformUIToData();
                 return; // 拦截掉原来的身体形变拖拽
             }
 
