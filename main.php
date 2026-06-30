@@ -156,17 +156,22 @@ function live2d_head()
         // --- 按钮样式设定 ---
         $btn_size = isset($settings['btn_size']) ? intval($settings['btn_size']) : 60;
         $btn_lh = isset($settings['btn_line_height']) ? intval($settings['btn_line_height']) : 20;
+        $btn_margin_top = isset($settings['btn_margin_top']) ? intval($settings['btn_margin_top']) : 64;
         $btn_bg = isset($settings['btn_color']) ? $settings['btn_color'] : 'rgba(0, 0, 0, 0.2)';
         $btn_hover = isset($settings['btn_hover_color']) ? $settings['btn_hover_color'] : '#f4f6f8';
+
+        $btn_text_color   = isset($settings['btn_text_color']) && !empty($settings['btn_text_color']) ? $settings['btn_text_color'] : '#02111d';
+        $btn_border_color = isset($settings['btn_border_color']) && !empty($settings['btn_border_color']) ? $settings['btn_border_color'] : 'rgba(102,204,255,.4)';
+        $btn_shadow_color = isset($settings['btn_shadow_color']) && !empty($settings['btn_shadow_color']) ? $settings['btn_shadow_color'] : 'rgba(102,204,255,.4)';
         
         $css .= ".l2d-action, .l2d-action-L, .show-button { 
             width: {$btn_size}px !important; 
             min-height: {$btn_lh}px !important; 
             line-height: {$btn_lh}px !important; 
             background: {$btn_bg} !important; 
-            border-color: {$b_border} !important;
-            box-shadow: 0 3px 15px 2px {$b_shadow} !important;
-            color: {$b_color} !important;
+            border: 1px solid {$btn_border_color} !important;
+            box-shadow: 0 3px 15px 2px {$btn_shadow_color} !important;
+            color: {$btn_text_color} !important;
             -webkit-backdrop-filter: blur(5px);
             backdrop-filter: blur(5px);
         }";        
@@ -174,24 +179,27 @@ function live2d_head()
        $css .= ".poi-corner-btn { 
             min-height: {$btn_lh}px !important; 
             line-height: {$btn_lh}px !important; 
-            border-color: {$b_border} !important;
+            border: 1px solid {$btn_border_color} !important;
             background: {$btn_bg} !important; 
+            box-shadow: 0 3px 6px {$btn_shadow_color} !important;
+            color: {$btn_text_color} !important;
             -webkit-backdrop-filter: blur(5px);
             backdrop-filter: blur(5px);
-            box-shadow: 0 3px 6px  {$b_shadow} !important;
-            color: {$b_color} !important;
         }";
         
-        // 继承后台设置的：鼠标悬浮色
-        $css .= ".poi-corner-btn:hover { 
-            min-height: {$btn_lh}px !important; 
-            line-height: {$btn_lh}px !important; 
-            border-color: {$b_border} !important;
+   
+        $css .= ".l2d-action:hover, .l2d-action-L:hover, .show-button:hover {
+            transform: scale(1.1); 
             background: {$btn_hover} !important; 
-            border-color: {$b_border} !important;
-            color: {$b_color} !important;
-            -webkit-backdrop-filter: blur(5px);
-            backdrop-filter: blur(5px);
+            border-color: {$btn_border_color} !important;
+            color: {$btn_text_color} !important;
+        }";
+
+        
+        $css .= ".poi-corner-btn:hover { 
+            background: {$btn_hover} !important; 
+            border-color: {$btn_border_color} !important;
+            color: {$btn_text_color} !important;
         }";
 
         $css .= '</style>';

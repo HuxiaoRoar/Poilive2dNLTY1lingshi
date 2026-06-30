@@ -239,8 +239,8 @@ function initLive2d() {
     }
 
     $('#landlord').hover(
-        () => { $('.l2d-menu, #poi-corner-tools').fadeIn(200).css('display', 'flex'); },
-        () => { $('.l2d-menu, #poi-corner-tools').fadeOut(200); }
+        () => { $('.l2d-menu, #poi-corner-tools').stop(true).fadeIn(200).css('display', 'flex'); },
+        // () => { $('.l2d-menu, #poi-corner-tools').stop(true).fadeOut(200); }
     );
 
     $('#hide-button').off('click').on('click', () => {

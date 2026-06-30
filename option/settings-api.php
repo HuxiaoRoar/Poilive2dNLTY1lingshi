@@ -95,14 +95,17 @@ class PoiLive2D_Settings {
         $this->add_field('poilive2d-style', 'section_style_btn', 'btn_size', '按钮大小(像素)', 'number_callback');
         $this->add_field('poilive2d-style', 'section_style_btn', 'btn_line_height', '按钮行高(像素)', 'number_callback');
         $this->add_field('poilive2d-style', 'section_style_btn', 'btn_margin_top', '按钮距顶部边距(像素)', 'number_callback', '数字越大越靠下');
-        $this->add_field('poilive2d-style', 'section_style_btn', 'btn_color', '按钮颜色', 'color_callback');
-        $this->add_field('poilive2d-style', 'section_style_btn', 'btn_hover_color', '按钮悬浮颜色', 'color_callback');
+        $this->add_field('poilive2d-style', 'section_style_btn', 'btn_color', '背景颜色', 'color_callback');
+        $this->add_field('poilive2d-style', 'section_style_btn', 'btn_border_color', '边框颜色', 'color_callback');
+        $this->add_field('poilive2d-style', 'section_style_btn', 'btn_shadow_color', '阴影颜色', 'color_callback');
+        $this->add_field('poilive2d-style', 'section_style_btn', 'btn_text_color', '文字颜色', 'color_callback');
+        $this->add_field('poilive2d-style', 'section_style_btn', 'btn_hover_color', '悬浮颜色', 'color_callback');
 
         add_settings_section('section_style_bubble', '气泡样式设置：', null, 'poilive2d-style');
         $this->add_field('poilive2d-style', 'section_style_bubble', 'bubble_size', '气泡大小', 'size_callback', '宽度 x 高度');
         $this->add_field('poilive2d-style', 'section_style_bubble', 'bubble_font_size', '气泡字号(像素)', 'number_callback');
         $this->add_field('poilive2d-style', 'section_style_bubble', 'bubble_margin_top', '气泡距顶部边距(像素)', 'number_callback', '数字越大越靠上');
-        $this->add_field('poilive2d-style', 'section_style_bubble', 'bubble_bg_color', '背景色', 'color_callback');
+        $this->add_field('poilive2d-style', 'section_style_bubble', 'bubble_bg_color', '背景颜色', 'color_callback');
         $this->add_field('poilive2d-style', 'section_style_bubble', 'bubble_border_color', '边框颜色', 'color_callback');
         $this->add_field('poilive2d-style', 'section_style_bubble', 'bubble_shadow_color', '阴影颜色', 'color_callback');
         $this->add_field('poilive2d-style', 'section_style_bubble', 'bubble_text_color', '文字颜色', 'color_callback');
