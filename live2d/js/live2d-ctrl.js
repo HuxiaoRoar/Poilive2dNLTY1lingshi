@@ -114,6 +114,7 @@ function initLive2d() {
             if (poilive2d_config.btn_model === '1') rightMenuHtml += '<li class="l2d-action" id="change-button">变身</li>';
             if (poilive2d_config.btn_texture === '1') rightMenuHtml += '<li class="l2d-action" id="switch-button">变装</li>';
             if (poilive2d_config.btn_hitokoto === '1') rightMenuHtml += '<li class="l2d-action" id="hitokoto-button">一言</li>';
+            rightMenuHtml += '<li class="l2d-action" id="adjust-button">调整</li>';
         } else {
             if (poilive2d_config.btn_model === '1') leftMenuHtml += '<li class="l2d-action-L" id="change-button">变身</li>';
             if (poilive2d_config.btn_texture === '1') leftMenuHtml += '<li class="l2d-action-L" id="switch-button">变装</li>';
@@ -122,6 +123,7 @@ function initLive2d() {
             if (poilive2d_config.btn_hide === '1') rightMenuHtml += '<li class="l2d-action" id="hide-button">隐藏</li>';
             if (poilive2d_config.btn_sing === '1') rightMenuHtml += '<li class="l2d-action" id="sing-button" onclick="getsong();">Sing</li>';
             if (poilive2d_config.btn_menu === '1') rightMenuHtml += '<li class="l2d-action" id="catalog-button">目录</li>';
+            rightMenuHtml += '<li class="l2d-action" id="adjust-button">调整</li>';
         }
 
         if (leftMenuHtml) $('#landlord').append('<ul class="l2d-menu l2d-menu-left">' + leftMenuHtml + '</ul>');
@@ -427,6 +429,187 @@ function initLive2d() {
             });
         }
     }
+    // ==========================================
+    // ★ 方案 B：注入模型微调 UI 面板
+    // ==========================================
+    // ★ 智能判定：根据角色贴边情况决定左右
+
+    var isDockRight = (typeof poilive2d_config !== 'undefined' && poilive2d_config.role_dock === 'right');
+    
+    // 只保留最核心的动态物理定位
+    var defaultPosStyle = isDockRight 
+        ? "position: absolute; right: 100%; margin-right: 15px; left: auto; bottom: 5px; top: auto;" 
+        : "position: absolute; left: 100%; margin-left: 15px; bottom: 5px; top: auto;";
+
+    // HTML 彻底解耦，不再包含内联样式
+    var panelHtml = `
+        <div id="poi-transform-panel" style="display:none; ${defaultPosStyle}">
+            
+            <div class="poi-panel-header">
+                <b>模型微调</b>
+                <span id="poi-tf-close" title="关闭">×</span>
+            </div>
+            
+            <div class="poi-tf-row">
+                <div><span>缩放比例</span> <span id="poi-tf-val-scale">1.00</span></div>
+                <input type="range" id="poi-tf-range-scale" min="0.3" max="3.0" step="0.02">
+            </div>
+            
+            <div class="poi-tf-row">
+                <div><span>X轴偏移</span> <span id="poi-tf-val-x">0</span></div>
+                <input type="range" id="poi-tf-range-x" min="-400" max="400" step="2">
+            </div>
+            
+            <div class="poi-tf-row">
+                <div><span>Y轴偏移</span> <span id="poi-tf-val-y">0</span></div>
+                <input type="range" id="poi-tf-range-y" min="-400" max="400" step="2">
+            </div>
+            
+            <button id="poi-tf-reset" class="vts-btn" style="width:100%;">恢复默认设置</button>
+        </div>
+    `;
+
+    // 将面板挂载到 landlord 容器中
+    if ($('#landlord').length > 0 && $('#poi-transform-panel').length === 0) {
+        $('#landlord').append(panelHtml);
+    }
+
+    // --- 交互事件绑定 ---
+
+    // 1. 同步数据：从 window._poiTransform 读取当前值到 UI 滑动条
+    function syncTransformUIToData() {
+        if (!window._poiTransform) return;
+        $('#poi-tf-range-scale').val(window._poiTransform.scale);
+        $('#poi-tf-val-scale').text(window._poiTransform.scale.toFixed(2));
+
+        $('#poi-tf-range-x').val(window._poiTransform.offsetX);
+        $('#poi-tf-val-x').text(Math.round(window._poiTransform.offsetX));
+
+        $('#poi-tf-range-y').val(window._poiTransform.offsetY);
+        $('#poi-tf-val-y').text(Math.round(window._poiTransform.offsetY));
+    }
+
+    // 2. 监听按钮：打开面板
+    $(document).on('click', '#adjust-button', function () {
+        syncTransformUIToData(); // 打开前先同步最新数据 (防止被Shift操作改过)
+        $('#poi-transform-panel').fadeIn(200);
+    });
+
+    // 3. 监听按钮：关闭面板
+    $(document).on('click', '#poi-tf-close', function () {
+        $('#poi-transform-panel').fadeOut(200);
+    });
+
+    // 4. 监听滑动条实时变动 (Input 事件)
+    $('#poi-tf-range-scale, #poi-tf-range-x, #poi-tf-range-y').on('input', function () {
+        if (!window._poiTransform) return;
+
+        // 抓取UI数值
+        let scale = parseFloat($('#poi-tf-range-scale').val());
+        let x = parseFloat($('#poi-tf-range-x').val());
+        let y = parseFloat($('#poi-tf-range-y').val());
+
+        // 更新文字显示
+        $('#poi-tf-val-scale').text(scale.toFixed(2));
+        $('#poi-tf-val-x').text(Math.round(x));
+        $('#poi-tf-val-y').text(Math.round(y));
+
+        // 写入管家并执行重绘
+        window._poiTransform.scale = scale;
+        window._poiTransform.offsetX = x;
+        window._poiTransform.offsetY = y;
+
+        window._poiTransform.apply();
+    });
+
+    // 5. 监听滑动条松开 (Change 事件，只在松手时保存到本地，节约性能)
+    $('#poi-tf-range-scale, #poi-tf-range-x, #poi-tf-range-y').on('change', function () {
+        if (window._poiTransform) window._poiTransform.save();
+    });
+
+    // 6. 恢复默认设置按钮
+    $('#poi-tf-reset').hover(
+        function () { $(this).css('background', 'rgba(255,255,255,0.4)'); },
+        function () { $(this).css('background', 'rgba(255,255,255,0.2)'); }
+    ).on('click', function () {
+        if (!window._poiTransform) return;
+
+        window._poiTransform.scale = 1.0;
+        window._poiTransform.offsetX = 0;
+        window._poiTransform.offsetY = 0;
+
+        window._poiTransform.apply();
+        window._poiTransform.save();
+        syncTransformUIToData(); // UI回弹到中间
+    });
+
+    // --- ★ 新增：浮框自由拖拽逻辑 ---
+    var isPanelDragging = false;
+    var pStartX, pStartY, pInitLeft, pInitTop;
+
+    // 鼠标按下把手
+    $(document).on('mousedown', '.poi-panel-header', function (e) {
+        // 如果点到的是关闭按钮，不触发拖拽
+        if (e.target.id === 'poi-tf-close') return;
+
+        isPanelDragging = true;
+        var $panel = $('#poi-transform-panel');
+
+        // 核心防御：按下时瞬间获取当前在页面上的物理像素位置
+        var currentPos = $panel.position();
+
+        // 瞬间将相对/百分比/margin样式打碎，固化为纯像素坐标，彻底杜绝拖拽瞬间的“跳跃闪烁”
+        $panel.css({
+            left: currentPos.left + 'px',
+            top: currentPos.top + 'px',
+            right: 'auto',
+            bottom: 'auto',
+            marginLeft: '0px',
+            marginRight: '0px'
+        });
+
+        pStartX = e.clientX;
+        pStartY = e.clientY;
+        pInitLeft = currentPos.left;
+        pInitTop = currentPos.top;
+
+        e.preventDefault(); // 阻止文字被意外选中
+    });
+
+    // 鼠标移动中
+    $(document).on('mousemove', function (e) {
+        if (!isPanelDragging) return;
+
+        var dx = e.clientX - pStartX;
+        var dy = e.clientY - pStartY;
+
+        $('#poi-transform-panel').css({
+            left: (pInitLeft + dx) + 'px',
+            top: (pInitTop + dy) + 'px'
+        });
+    });
+
+    // 鼠标松开
+    $(document).on('mouseup', function () {
+        isPanelDragging = false;
+    });
+
+    
+    // 恢复默认设置按钮逻辑 (视觉动效已全部交由 CSS 的 .vts-btn 处理)
+    $(document).on('click', '#poi-tf-reset', function () {
+        if (!window._poiTransform) return;
+
+        window._poiTransform.scale = 1.0;
+        window._poiTransform.offsetX = 0;
+        window._poiTransform.offsetY = 0;
+
+        window._poiTransform.apply();
+        window._poiTransform.save();
+        syncTransformUIToData(); // UI回弹到中间
+
+        // ★ 点击重置时，让面板回到设定的默认位置，同样极简
+        $('#poi-transform-panel').attr('style', `display:block; ${defaultPosStyle}`);
+    });
 }
 initLive2d();
 

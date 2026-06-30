@@ -36,19 +36,40 @@ function InitPoi() {
 
     // A. 【核心修复】：PixiApp 舞台全局只初始化一次！绝不反复销毁重建！
     if (!pixiApp) {
+        // --- ★ 新增：动态解析后台设置的画板分辨率 ---
+        let stageW = 280;
+        let stageH = 250;
+        if (typeof poilive2d_config !== 'undefined' && poilive2d_config.role_size) {
+            stageW = parseInt(poilive2d_config.role_size.w) || 280;
+            stageH = parseInt(poilive2d_config.role_size.h) || 250;
+        }
+
         pixiApp = new PIXI.Application({
             view: canvas,
             backgroundAlpha: 0,
             clearBeforeRender: true,
             autoStart: true,
-            width: 280,        // 逻辑宽度
-            height: 250,       // 逻辑高度
-            resolution: window.devicePixelRatio || 1, 
-            autoDensity: true,                        
-            antialias: true                           
+            width: stageW,        // ★ 替换为动态宽度
+            height: stageH,       // ★ 替换为动态高度
+            resolution: window.devicePixelRatio || 1,
+            autoDensity: true,
+            antialias: true
+        });
+
+        window.addEventListener('resize', () => {
+            if (pixiApp && pixiApp.renderer) {
+                // 1. 抓取当前浏览器实时变更的 DPR (缩放比例)
+                const currentDpr = window.devicePixelRatio || 1;
+
+                // 2. 如果发现缩放比例变了，动态通知引擎底层更新渲染精度
+                if (pixiApp.renderer.resolution !== currentDpr) {
+                    pixiApp.renderer.resolution = currentDpr;
+                    // 3. 强制重绘 WebGL 缓冲区，画面瞬间恢复极致清晰，且不打断模型动作
+                    pixiApp.renderer.resize(stageW, stageH);
+                }
+            }
         });
     }
-
 
     // B. 安全撤下旧演员 (核心防御区)
     if (currentLive2dModel) {
@@ -150,15 +171,55 @@ function InitPoi() {
         const modelHeight = model.height;
 
         // 3. 计算自适应缩放比例 (Auto Scale)
-        let autoScale = Math.min(canvasWidth / modelWidth, canvasHeight / modelHeight);
-        autoScale = autoScale * 0.9; // 留白呼吸感 
+        let autoScale = Math.min(canvasWidth / modelWidth, canvasHeight / modelHeight) * 0.9;
 
-        // 4. 正式应用
-        model.scale.set(autoScale);
+        window._poiTransform = {
+            scale: parseFloat(localStorage.getItem('live2d_scale_' + currentModel)) || 1.0,
+            offsetX: parseFloat(localStorage.getItem('live2d_offsetX_' + currentModel)) || 0,
+            offsetY: parseFloat(localStorage.getItem('live2d_offsetY_' + currentModel)) || 0,
 
-        // 5. 完美居中对齐 (Auto Center)
-        model.x = (canvasWidth - modelWidth * autoScale) / 2;
-        model.y = canvasHeight - (modelHeight * autoScale);
+            // 执行渲染刷新
+            apply: function () {
+                const finalScale = autoScale * this.scale;
+                model.scale.set(finalScale);
+
+                const currentW = modelWidth * finalScale;
+                const currentH = modelHeight * finalScale;
+
+                model.x = (canvasWidth - currentW) / 2 + this.offsetX;
+                model.y = canvasHeight - currentH + this.offsetY;
+            },
+
+            // 保存至本地存储
+            save: function () {
+                localStorage.setItem('live2d_scale_' + currentModel, this.scale.toFixed(3));
+                localStorage.setItem('live2d_offsetX_' + currentModel, this.offsetX.toFixed(1));
+                localStorage.setItem('live2d_offsetY_' + currentModel, this.offsetY.toFixed(1));
+            }
+        };
+
+        // 4 & 5. 首次渲染应用参数
+        window._poiTransform.apply();
+
+        // ==========================================
+        // ★ A 方案：Shift + 滚轮实现模型独立缩放
+        // ==========================================
+        pixiApp.view.addEventListener('wheel', (e) => {
+            if (e.shiftKey) {
+                e.preventDefault(); // 阻止网页默认的上下滚动
+
+                // 滚轮向上放大，向下缩小，步长 0.05
+                const delta = e.deltaY < 0 ? 0.05 : -0.05;
+                window._poiTransform.scale += delta;
+
+                // 设置安全极限（最小0.3倍，最大3倍），防止缩放过头消失或崩溃
+                window._poiTransform.scale = Math.max(0.3, Math.min(window._poiTransform.scale, 3.0));
+
+                window._poiTransform.apply();
+                window._poiTransform.save();
+            }
+        });
+
 
      
         // ==========================================
@@ -347,7 +408,7 @@ function InitPoi() {
         if (!model.internalModel.eyeBlink) {
             //console.log("🛠️ [眨眼系统] 检测到当前模型未配置官方 EyeBlink 组，正在注入自研拟人眨眼状态机...");
 
-            // 1. 彻底抛弃 LPV 默认垃圾频率，统一采用黄金自然频率 (未来可对接 PHP 后端设置)
+            // 1. 这里参数可以修改。
             let lpvConfig = {
                 blinkMinInterval: 3000,  // 最小睁眼等待时间
                 blinkMaxInterval: 5000,  // 最大睁眼等待时间
@@ -453,7 +514,21 @@ function InitPoi() {
         let hasTriggeredLongPress = false;
         const LONG_PRESS_DURATION = 600; // 长按触发时间：600毫秒
 
+        // ★ 新增：专用于控制位移的临时上下文
+        let shiftDragCtx = null;
+
         model.on('pointerdown', (e) => {
+
+            if (e.data.originalEvent && e.data.originalEvent.shiftKey) {
+                shiftDragCtx = {
+                    startX: e.data.global.x,
+                    startY: e.data.global.y,
+                    initOffsetX: window._poiTransform.offsetX,
+                    initOffsetY: window._poiTransform.offsetY
+                };
+                return; // 直接退出！绝对不去触发后面的模型互动（比如换装、发声等）
+            }
+
             const hitAreas = model.hitTest(e.data.global.x, e.data.global.y);
             if (!hitAreas.length) return;
 
@@ -509,6 +584,18 @@ function InitPoi() {
         const SENSITIVITY = 5.0;
 
         model.on('pointermove', (e) => {
+
+            if (shiftDragCtx) {
+                let dx = e.data.global.x - shiftDragCtx.startX;
+                let dy = e.data.global.y - shiftDragCtx.startY;
+
+                window._poiTransform.offsetX = shiftDragCtx.initOffsetX + dx;
+                window._poiTransform.offsetY = shiftDragCtx.initOffsetY + dy;
+
+                window._poiTransform.apply(); // 实时应用
+                return; // 拦截掉原来的身体形变拖拽
+            }
+
             if (!pointerDownContext) return;
             
             const dx = e.data.global.x - pointerDownContext.startX;
@@ -571,6 +658,11 @@ function InitPoi() {
         });
 
         const handlePointerUp = (e) => {
+            if (shiftDragCtx) {
+                window._poiTransform.save();
+                shiftDragCtx = null;
+                return;
+            }
             // ★ 松手时，无论如何先清理定时器
             if (longPressTimer) {
                 clearTimeout(longPressTimer);
