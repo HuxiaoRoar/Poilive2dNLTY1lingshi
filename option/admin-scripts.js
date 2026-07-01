@@ -19,6 +19,7 @@ jQuery(document).ready(function ($) {
     });
 
     $('.poilive2d-tab-link').on('click', function (e) {
+
         e.preventDefault();
         if ($(this).hasClass('nav-tab-active')) return;
 
@@ -30,6 +31,8 @@ jQuery(document).ready(function ($) {
         var $newContent = $('#tab-' + targetTab);
 
         localStorage.setItem('poilive2d_active_tab', targetTab);
+
+        checkPreviewVisibility();
 
         // 平滑的淡出淡入
         $currentContent.fadeOut(150, function () {
@@ -46,10 +49,169 @@ jQuery(document).ready(function ($) {
     });
 
     // ==========================================
-    // 1. 基础 UI 初始化
+    // 1. 基础 UI 初始化 (新增取色器实时监听)
     // ==========================================
     if (typeof $.fn.wpColorPicker === 'function') {
-        $('.color-picker').wpColorPicker();
+        $('.color-picker').wpColorPicker({
+            change: function (event, ui) {
+                // 拖动取色棒时实时触发
+                setTimeout(updateLivePreview, 10);
+            },
+            clear: function () {
+                // 点击清空按钮时触发
+                setTimeout(updateLivePreview, 10);
+            }
+        });
+    }
+
+    // ==========================================
+    // ⭐ 实时预览面板渲染引擎 (已修复切换显隐与顶边距漏洞)
+    // ==========================================
+    function updateLivePreview() {
+        // --- 1. 抓取【气泡】相关表单值 ---
+        var bW = $('input[name="poilive2d_options[bubble_size][w]"]').val() || 'auto';
+        var bH = $('input[name="poilive2d_options[bubble_size][h]"]').val() || 'auto';
+        var bFont = $('#bubble_font_size').val() || 15;
+        var bTop = $('#bubble_margin_top').val() || 200;
+        var bBg = $('#bubble_bg_color').val() || 'rgba(250, 248, 247, 0.9)';
+        var bBorder = $('#bubble_border_color').val() || 'rgba(102,204,255,.4)';
+        var bShadow = $('#bubble_shadow_color').val() || 'rgba(102,204,255,.4)';
+        var bColor = $('#bubble_text_color').val() || '#02111d';
+        var bHighlight = $('#bubble_highlight_color').val() || '#0099cc';
+
+        // --- 2. 抓取【按钮】相关表单值 ---
+        var btnSize = $('#btn_size').val() || 60;
+        var btnLh = $('#btn_line_height').val() || 20;
+        var btnMarginTop = $('#btn_margin_top').val() || 64; // 修复：抓取按钮距顶部边距
+        var btnBg = $('#btn_color').val() || 'rgba(0, 0, 0, 0.2)';
+        var btnHover = $('#btn_hover_color').val() || '#f4f6f8';
+        var btnTextColor = $('#btn_text_color').val() || '#02111d';
+        var btnBorderColor = $('#btn_border_color').val() || 'rgba(102,204,255,.4)';
+        var btnShadowColor = $('#btn_shadow_color').val() || 'rgba(102,204,255,.4)';
+
+        // --- 3. 抓取【贴边布局】表单值 ---
+        var rDock = $('#role_dock').val() || 'left';
+
+        // --- 4. 生成动态隔离的 CSS ---
+        var previewCss = '';
+
+        // [气泡样式]
+        var bubbleW = (bW === 'auto' || bW == 0) ? 'auto' : bW + 'px';
+        var bubbleH = (bH === 'auto' || bH == 0) ? 'auto' : bH + 'px';
+        previewCss += '.preview-message { ' +
+            'width: ' + bubbleW + ' !important; ' +
+            'height: ' + bubbleH + ' !important; ' +
+            'font-size: ' + bFont + 'px !important; ' +
+            'bottom: ' + bTop + 'px !important; ' +
+            'background-color: ' + bBg + ' !important; ' +
+            'border: 1px solid ' + bBorder + ' !important; ' +
+            'box-shadow: 0 3px 15px 2px ' + bShadow + ' !important; ' +
+            'color: ' + bColor + ' !important; ' +
+            '}';
+
+        previewCss += '.preview-highlight { ' +
+            'color: ' + bHighlight + ' !important; ' +
+            'font-weight: bold !important; ' + // 如果你的高亮是加粗的，保留这行
+            '}';
+        
+        var realPreviewTop = parseInt(btnMarginTop) + 100   ;
+        // [菜单与工具栏占位避让 - 修复：增大边距使按钮整体内移，并注入动态 top 顶边距]
+        if (rDock === 'right') {
+            previewCss += '.preview-menu-right { right: auto !important; left: 40px !important; top: ' + realPreviewTop + 'px !important; }';
+            previewCss += '.preview-corner-tools { right: auto !important; left: 40px !important; }';
+        } else {
+            previewCss += '.preview-menu-right { left: auto !important; right: 40px !important; top: ' + realPreviewTop + 'px !important; }';
+            previewCss += '.preview-corner-tools { left: auto !important; right: 40px    !important; }';
+        }
+
+        // [主按钮样式]
+        previewCss += '.preview-action { ' +
+            'width: ' + btnSize + 'px !important; ' +
+            'line-height: ' + btnLh + 'px !important; ' +
+            'background: ' + btnBg + ' !important; ' +
+            'border: 1px solid ' + btnBorderColor + ' !important; ' +
+            'box-shadow: 0 3px 15px 2px ' + btnShadowColor + ' !important; ' +
+            'color: ' + btnTextColor + ' !important; ' +
+            '}';
+
+        // [角落工具栏按钮样式]
+        previewCss += '.preview-corner-btn { ' +
+            'width: ' + btnLh + 'px !important; ' +
+            'line-height: ' + btnLh + 'px !important; ' +
+            'background: ' + btnBg + ' !important; ' +
+            'border: 1px solid ' + btnBorderColor + ' !important; ' +
+            'box-shadow: 0 3px 6px ' + btnShadowColor + ' !important; ' +
+            'color: ' + btnTextColor + ' !important; ' +
+            '}';
+
+        // [鼠标悬浮样式]
+        previewCss += '.preview-action:hover, .preview-corner-btn:hover { ' +
+            'background: ' + btnHover + ' !important; ' +
+            'border-color: ' + btnBorderColor + ' !important; ' +
+            'color: ' + btnTextColor + ' !important; ' +
+            '}';
+
+        // --- 5. 挂载到沙盒专用的 style 标签 ---
+        var $style = $('#poilive2d-preview-dynamic-style');
+        if ($style.length === 0) {
+            $style = $('<style id="poilive2d-preview-dynamic-style"></style>').appendTo('head');
+        }
+        $style.html(previewCss);
+    }
+
+    // ==========================================
+    // ⭐ 实时预览面板：滚动显隐控制器 (进阶动态锚点版)
+    // ==========================================
+    function checkPreviewVisibility() {
+        var currentTab = localStorage.getItem('poilive2d_active_tab') || 'basic';
+        var scrollPos = $(window).scrollTop();
+
+        // 我们只在“样式设置”页面内进行计算和显示
+        if (currentTab === 'style') {
+
+            // 动态寻找“按钮样式设置”的标题（H2标签），如果找不到就用 #btn_size 兜底
+            var $anchor = $('#tab-style h2:contains("按钮")').length ? $('#tab-style h2:contains("按钮")') : $('#btn_size');
+            var triggerOffset = 300; // 保底初始值
+
+            // 确保元素存在且可见（防止在刚切换标签页、动画还没结束时获取到 0）
+            if ($anchor.length > 0 && $anchor.is(':visible')) {
+                triggerOffset = $anchor.offset().top - 200;
+            }
+
+            // 核心判定：向下滚动超过 锚点位置 - 100px
+            if (scrollPos > triggerOffset) {
+                if ($('#poilive2d-live-preview').is(':hidden')) {
+                    $('#poilive2d-live-preview').stop(true, true).fadeIn(200);
+                    updateLivePreview(); // 确保弹出来时读取的是最新表单值
+                }
+            } else {
+                if ($('#poilive2d-live-preview').is(':visible')) {
+                    $('#poilive2d-live-preview').fadeOut(200);
+                }
+            }
+
+        } else {
+            // 如果不在样式页，直接隐藏
+            if ($('#poilive2d-live-preview').is(':visible')) {
+                $('#poilive2d-live-preview').fadeOut(200);
+            }
+        }
+    }
+
+    // 监听鼠标滚轮/拖动条事件，实时触发判定
+    $(window).on('scroll', function () {
+        checkPreviewVisibility();
+    });
+
+
+    // 监听：文本框数字改变、下拉菜单改变
+    $(document).on('input change', '#tab-style input[type="number"], #tab-style select', function () {
+        updateLivePreview();
+    });
+
+    // 刷新进入后台时，如果当前正好是样式页，立即点亮面板
+    if (activeTab === 'style') {
+        setTimeout(checkPreviewVisibility, 100);
     }
 
     // 统筹加号按钮的移动逻辑

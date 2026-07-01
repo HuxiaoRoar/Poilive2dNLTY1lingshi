@@ -77,4 +77,31 @@ $active_tab = isset($_GET['tab']) ? $_GET['tab'] : 'basic';
             </div>
         </div>
     </div>
+
+    <div id="poilive2d-live-preview" style="display: none;">
+        <div class="preview-header">
+            <b>样式实时预览</b>
+            <span style="font-size: 12px; font-weight: normal; color: #666;"> (仅供排版与色彩参考)</span>
+        </div>
+        
+        <div class="preview-canvas" id="preview-landlord">
+            
+            <div class="preview-message" id="preview-bubble">
+                一条测试用气泡消息，<span class="preview-highlight">包含高亮文字</span>，用来实时预览你当前的样式排版哦~ 
+            </div>
+            
+            <div class="preview-model-placeholder">人物模型展示区</div>
+            
+            <ul class="preview-menu-right">
+                <li class="preview-action">变身</li>
+                <li class="preview-action">变装</li>
+            </ul>
+
+            <div class="preview-corner-tools">
+                <div class="preview-corner-btn">✥</div>
+                <div class="preview-corner-btn">⚙️</div>
+            </div>
+        </div>
+    </div>
+
 </div>
