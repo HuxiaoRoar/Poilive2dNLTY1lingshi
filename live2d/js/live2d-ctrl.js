@@ -97,31 +97,52 @@ function initLive2d() {
             }
         `;
 
+        var singleDock = poilive2d_config.btn_single_dock || 'right';
+
         if (isSingleLayout) {
-            layoutStyle += `
-                .l2d-menu-right { top: ${marginTop}px !important; right: -25px; }
-                .message { transform: translateY(-30px); }
-            `;
+            // 如果单列菜单靠左
+            if (singleDock === 'left') {
+                layoutStyle += `
+                    .l2d-menu-left { top: ${marginTop}px !important;left: -10px; }
+                    ; }
+                `;
+            } else {
+                // 如果单列菜单靠右
+                layoutStyle += `
+                    .l2d-menu-right { top: ${marginTop}px !important; right: -10px; }
+                    ; }
+                `;
+            }
         }
         $('head').append('<style id="l2d-layout-override">' + layoutStyle + '</style>');
 
         var leftMenuHtml = '', rightMenuHtml = '';
 
         if (isSingleLayout) {
-            if (poilive2d_config.btn_hide === '1') rightMenuHtml += '<li class="l2d-action" id="hide-button">隐藏</li>';
-            if (poilive2d_config.btn_sing === '1') rightMenuHtml += '<li class="l2d-action" id="sing-button" onclick="getsong();">Sing</li>';
-            if (poilive2d_config.btn_menu === '1') rightMenuHtml += '<li class="l2d-action" id="catalog-button">目录</li>';
-            if (poilive2d_config.btn_model === '1') rightMenuHtml += '<li class="l2d-action" id="change-button">变身</li>';
-            if (poilive2d_config.btn_texture === '1') rightMenuHtml += '<li class="l2d-action" id="switch-button">变装</li>';
-            if (poilive2d_config.btn_hitokoto === '1') rightMenuHtml += '<li class="l2d-action" id="hitokoto-button">一言</li>';            
+            // 拼接单列时的所有开启的菜单项
+            var menuHtml = '';
+            if (poilive2d_config.btn_hide === '1') menuHtml += '<li class="l2d-action" id="hide-button">隐藏</li>';
+            if (poilive2d_config.btn_sing === '1') menuHtml += '<li class="l2d-action" id="sing-button" onclick="getsong();">Sing</li>';
+            if (poilive2d_config.btn_menu === '1') menuHtml += '<li class="l2d-action" id="catalog-button">目录</li>';
+            if (poilive2d_config.btn_model === '1') menuHtml += '<li class="l2d-action" id="change-button">变身</li>';
+            if (poilive2d_config.btn_texture === '1') menuHtml += '<li class="l2d-action" id="switch-button">变装</li>';
+            if (poilive2d_config.btn_hitokoto === '1') menuHtml += '<li class="l2d-action" id="hitokoto-button">一言</li>';
+
+            // 智能分发到对应的 HTML 容器槽位中
+            if (singleDock === 'left') {
+                leftMenuHtml += menuHtml;
+            } else {
+                rightMenuHtml += menuHtml;
+            }
         } else {
+            // 传统的双列模式排布逻辑保持不变
             if (poilive2d_config.btn_model === '1') leftMenuHtml += '<li class="l2d-action-L" id="change-button">变身</li>';
             if (poilive2d_config.btn_texture === '1') leftMenuHtml += '<li class="l2d-action-L" id="switch-button">变装</li>';
             if (poilive2d_config.btn_hitokoto === '1') leftMenuHtml += '<li class="l2d-action-L" id="hitokoto-button">一言</li>';
 
             if (poilive2d_config.btn_hide === '1') rightMenuHtml += '<li class="l2d-action" id="hide-button">隐藏</li>';
             if (poilive2d_config.btn_sing === '1') rightMenuHtml += '<li class="l2d-action" id="sing-button" onclick="getsong();">Sing</li>';
-            if (poilive2d_config.btn_menu === '1') rightMenuHtml += '<li class="l2d-action" id="catalog-button">目录</li>';            
+            if (poilive2d_config.btn_menu === '1') rightMenuHtml += '<li class="l2d-action" id="catalog-button">目录</li>';
         }
 
         if (leftMenuHtml) $('#landlord').append('<ul class="l2d-menu l2d-menu-left">' + leftMenuHtml + '</ul>');
@@ -316,9 +337,21 @@ function initLive2d() {
         cornerTools.id = 'poi-corner-tools';
         // 智能避让：角色靠右贴边，控件就去左下角；靠左，就去右下角
         if (isDockRight) {
-            cornerTools.style.left = '2px';
+            
+            // 检查左侧是否有主菜单（双列模式必然有；或者单列模式但用户选择了靠左）
+            if (!isSingleLayout || singleDock === 'left') {
+                cornerTools.style.right = '2px'; // 发生撞车，向内闪避
+            } else {
+                cornerTools.style.left = '2px';  // 路线安全，正常贴边
+            }
         } else {
-            cornerTools.style.right = '2px';
+            // 角色靠左，小按钮被分配到右下角。
+            // 检查右侧是否有主菜单（双列模式必然有；或者单列模式但用户选择了靠右）
+            if (!isSingleLayout || singleDock === 'right') {
+                cornerTools.style.left = '2px'; // 发生撞车，向内闪避
+            } else {
+                cornerTools.style.right = '2px';  // 路线安全，正常贴边
+            }
         }
 
         // 1. 专属拖拽手柄

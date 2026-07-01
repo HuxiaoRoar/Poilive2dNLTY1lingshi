@@ -37,7 +37,8 @@ class PoiLive2D_Settings {
         $current_api = isset($opt['hitokoto_api']) ? $opt['hitokoto_api'] : 'local';
         $current_origin = isset($opt['hitokoto_origin']) ? $opt['hitokoto_origin'] : '2';
         
-
+        $current_btn_layout = isset($opt['btn_layout']) ? $opt['btn_layout'] : '0';
+        $btn_single_dock_class = ($current_btn_layout === '1') ? '' : 'hidden-settings-row'; // 单列菜单位置显隐
 
         // 计算类名（如果逻辑不符，则加上 hidden-settings-row）
         $local_msgs_class = ($current_api === 'local') ? '' : 'hidden-settings-row';
@@ -53,6 +54,7 @@ class PoiLive2D_Settings {
         
         $this->add_field('poilive2d-basic', 'section_basic_btns', 'btn_all', '所有按钮', 'radio_callback');
         $this->add_field('poilive2d-basic', 'section_basic_btns', 'btn_layout', '按钮排列', 'radio_callback', ['1' => '单列', '0' => '双列']);
+        $this->add_field('poilive2d-basic', 'section_basic_btns', 'btn_single_dock', '单列菜单位置', 'radio_callback', ['left' => '靠左', 'right' => '靠右'], $btn_single_dock_class);
         $this->add_field('poilive2d-basic', 'section_basic_btns', 'btn_hide', '“隐藏”按钮', 'radio_callback');
         $this->add_field('poilive2d-basic', 'section_basic_btns', 'btn_sing', '“Sing”按钮', 'radio_callback');
         $this->add_field('poilive2d-basic', 'section_basic_btns', 'btn_model', '“变身”按钮（切换模型）', 'radio_callback');

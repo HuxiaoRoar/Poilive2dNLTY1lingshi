@@ -75,6 +75,81 @@ function InitPoi() {
                 }
             }
         });
+
+
+        // ==========================================
+        // ★ A 方案：Shift + 滚轮实现模型独立缩放
+        // ==========================================
+        pixiApp.view.addEventListener('wheel', (e) => {
+            if (e.shiftKey) {
+                e.preventDefault(); // 阻止网页默认的上下滚动
+
+                // 滚轮向上放大，向下缩小，步长 0.05
+                const delta = e.deltaY < 0 ? 0.05 : -0.05;
+                window._poiTransform.scale += delta;
+
+                // 设置安全极限（最小0.3倍，最大3倍），防止缩放过头消失或崩溃
+                window._poiTransform.scale = Math.max(0.3, Math.min(window._poiTransform.scale, 3.0));
+
+                window._poiTransform.apply();
+                window._poiTransform.save();
+                if (window.syncTransformUIToData) window.syncTransformUIToData();
+            }
+        });
+
+        // ==========================================
+        // ★ POI 调试台：全局快捷键中枢
+        // ==========================================
+        window._poiDebugLoggingEnabled = false; // 1键开关状态
+
+        window.addEventListener('keydown', (e) => {
+            // 屏蔽输入框打字时的误触
+            if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+
+            switch (e.key) {
+                case '1': // 开启连续打印                    
+                    if (!currentLive2dModel || !window._poiCachedBones) {
+                        console.log("%c[Poi快照] ❌ 模型数据尚未准备好", "color: red;");
+                        return;
+                    }
+
+                    const bones = window._poiCachedBones;
+                    const mX = window._poiRealMouseX || 0;
+                    const mY = window._poiRealMouseY || 0;
+                    const sW = window._poiScreenWidth || 0;
+                    const sH = window._poiScreenHeight || 0;
+                    const bX = window._poiSafeMaxX || 0;
+                    const bY = window._poiSafeMaxY || 0;
+                    const phys = window._poiSpeedCache || { velX: 0, velY: 0, accX: 0, accY: 0 };
+
+                    const targetXStr = typeof targetEyeX !== 'undefined' ? targetEyeX.toFixed(3) : 'N/A';
+                    const targetYStr = typeof targetEyeY !== 'undefined' ? targetEyeY.toFixed(3) : 'N/A';
+                    const currXStr = typeof currentEyeX !== 'undefined' ? currentEyeX.toFixed(3) : 'N/A';
+                    const currYStr = typeof currentEyeY !== 'undefined' ? currentEyeY.toFixed(3) : 'N/A';
+
+                    // 合成当前向量速度大小
+                    const currentSpeed = Math.sqrt(phys.velX * phys.velX + phys.velY * phys.velY);
+                    // 速度标尺：大于 0.08 标红(高速狂飙)，否则标绿
+                    const speedColor = currentSpeed > 0.08 ? "color: #e74c3c; font-weight: bold; background: #fadbd8; padding: 2px;" : "color: #27ae60; font-weight: bold; background: #d5f5e3; padding: 2px;";
+
+                    console.log(
+                        `%c[📸 单次快照 - 物理引擎雷达]\n` +
+                        `%c🖥️ 屏幕尺寸: 宽 ${sW}px, 高 ${sH}px  |  📏 活动基准: X轴极值边 ${bX.toFixed(1)}px, Y轴极值边 ${bY.toFixed(1)}px\n` +
+                        `%c🖱️ 鼠标实况: X: ${mX.toFixed(1)}px, Y: ${mY.toFixed(1)}px\n` +
+                        `%c🎯 目标指令: X: ${targetXStr}, Y: ${targetYStr}  |  🏃 当前平滑: X: ${currXStr}, Y: ${currYStr}\n` +
+                        `%c🦴 骨骼实况: 头(X:${bones.aX.toFixed(2)}, Y:${bones.aY.toFixed(2)}) | 眼(X:${bones.eX.toFixed(2)}, Y:${bones.eY.toFixed(2)})\n` +
+                        `%c⚙️ 当前动量 (V): ${currentSpeed.toFixed(4)} %c | 💥 瞬时受力 (aX:${phys.accX.toFixed(4)}, aY:${phys.accY.toFixed(4)})`,
+                        "color: #8e44ad; font-weight: bold; font-size: 13px; background: #f3e5f5; padding: 4px; border-radius: 4px;",
+                        "color: #7f8c8d; font-size: 12px;",
+                        "color: #34495e; font-size: 12px;",
+                        "color: #d35400; font-size: 12px;",
+                        "color: #2980b9; font-size: 12px;",
+                        speedColor,
+                        "color: #555; font-size: 12px;"
+                    );
+                    break;
+            }
+        });
     }
 
     // B. 安全撤下旧演员 (核心防御区)
@@ -209,25 +284,6 @@ function InitPoi() {
 
         if (window.syncTransformUIToData) window.syncTransformUIToData();
 
-        // ==========================================
-        // ★ A 方案：Shift + 滚轮实现模型独立缩放
-        // ==========================================
-        pixiApp.view.addEventListener('wheel', (e) => {
-            if (e.shiftKey) {
-                e.preventDefault(); // 阻止网页默认的上下滚动
-
-                // 滚轮向上放大，向下缩小，步长 0.05
-                const delta = e.deltaY < 0 ? 0.05 : -0.05;
-                window._poiTransform.scale += delta;
-
-                // 设置安全极限（最小0.3倍，最大3倍），防止缩放过头消失或崩溃
-                window._poiTransform.scale = Math.max(0.3, Math.min(window._poiTransform.scale, 3.0));
-
-                window._poiTransform.apply();
-                window._poiTransform.save();
-                if (window.syncTransformUIToData) window.syncTransformUIToData();
-            }
-        });
 
 
      
@@ -853,59 +909,7 @@ function InitPoi() {
 
 
         TODO:
-        // ==========================================
-        // ★ POI 调试台：全局快捷键中枢
-        // ==========================================
-        window._poiDebugLoggingEnabled = false; // 1键开关状态
-
-        window.addEventListener('keydown', (e) => {
-            // 屏蔽输入框打字时的误触
-            if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
-
-            switch (e.key) {
-                case '1': // 开启连续打印                    
-                    if (!currentLive2dModel || !window._poiCachedBones) {
-                        console.log("%c[Poi快照] ❌ 模型数据尚未准备好", "color: red;");
-                        return;
-                    }
-
-                    const bones = window._poiCachedBones;
-                    const mX = window._poiRealMouseX || 0;
-                    const mY = window._poiRealMouseY || 0;
-                    const sW = window._poiScreenWidth || 0;
-                    const sH = window._poiScreenHeight || 0;
-                    const bX = window._poiSafeMaxX || 0;
-                    const bY = window._poiSafeMaxY || 0;
-                    const phys = window._poiSpeedCache || { velX: 0, velY: 0, accX: 0, accY: 0 };
-
-                    const targetXStr = typeof targetEyeX !== 'undefined' ? targetEyeX.toFixed(3) : 'N/A';
-                    const targetYStr = typeof targetEyeY !== 'undefined' ? targetEyeY.toFixed(3) : 'N/A';
-                    const currXStr = typeof currentEyeX !== 'undefined' ? currentEyeX.toFixed(3) : 'N/A';
-                    const currYStr = typeof currentEyeY !== 'undefined' ? currentEyeY.toFixed(3) : 'N/A';
-
-                    // 合成当前向量速度大小
-                    const currentSpeed = Math.sqrt(phys.velX * phys.velX + phys.velY * phys.velY);
-                    // 速度标尺：大于 0.08 标红(高速狂飙)，否则标绿
-                    const speedColor = currentSpeed > 0.08 ? "color: #e74c3c; font-weight: bold; background: #fadbd8; padding: 2px;" : "color: #27ae60; font-weight: bold; background: #d5f5e3; padding: 2px;";
-
-                    console.log(
-                        `%c[📸 单次快照 - 物理引擎雷达]\n` +
-                        `%c🖥️ 屏幕尺寸: 宽 ${sW}px, 高 ${sH}px  |  📏 活动基准: X轴极值边 ${bX.toFixed(1)}px, Y轴极值边 ${bY.toFixed(1)}px\n` +
-                        `%c🖱️ 鼠标实况: X: ${mX.toFixed(1)}px, Y: ${mY.toFixed(1)}px\n` +
-                        `%c🎯 目标指令: X: ${targetXStr}, Y: ${targetYStr}  |  🏃 当前平滑: X: ${currXStr}, Y: ${currYStr}\n` +
-                        `%c🦴 骨骼实况: 头(X:${bones.aX.toFixed(2)}, Y:${bones.aY.toFixed(2)}) | 眼(X:${bones.eX.toFixed(2)}, Y:${bones.eY.toFixed(2)})\n` +
-                        `%c⚙️ 当前动量 (V): ${currentSpeed.toFixed(4)} %c | 💥 瞬时受力 (aX:${phys.accX.toFixed(4)}, aY:${phys.accY.toFixed(4)})`,
-                        "color: #8e44ad; font-weight: bold; font-size: 13px; background: #f3e5f5; padding: 4px; border-radius: 4px;",
-                        "color: #7f8c8d; font-size: 12px;",
-                        "color: #34495e; font-size: 12px;",
-                        "color: #d35400; font-size: 12px;",
-                        "color: #2980b9; font-size: 12px;",
-                        speedColor,
-                        "color: #555; font-size: 12px;"
-                    );
-                    break;
-            }
-        });
+       
         
         model.internalModel.on('afterUpdate', () => {    
 

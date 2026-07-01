@@ -813,7 +813,23 @@ jQuery(document).ready(function ($) {
     filterTrackRows($('#focus_track_mode').val());
 
 
-    
+    // ==========================================
+    // 交互显隐：基础设置的“单列菜单靠边方向”
+    // ==========================================
+    var $btnSingleDockRow = $('th:contains("单列菜单位置")').closest('tr');
+
+    // 监听“按钮排列” (单/双列) 的实时切换事件
+    $('input[name="poilive2d_options[btn_layout]"]').on('change', function () {
+        var layoutType = $('input[name="poilive2d_options[btn_layout]"]:checked').val();
+
+        if (layoutType === '1') {
+            // 选中单列，显示左右靠边选项
+            $btnSingleDockRow.removeClass('hidden-settings-row').show();
+        } else {
+            // 选中双列，隐藏
+            $btnSingleDockRow.addClass('hidden-settings-row').hide();
+        }
+    });
 
 });
 
